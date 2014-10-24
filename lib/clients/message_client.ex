@@ -29,7 +29,10 @@ defmodule MessageClient do
         ]
 
         MessageProcessor.get(
-            "queue_id=#{queue_id}&last_event_id=#{last_event_id}",
+            URI.encode_query(%{
+                    "queue_id"      => queue_id,
+                    "last_event_id" => last_event_id
+            }),
             [], # empty headers
             [
                 stream_to: self,
