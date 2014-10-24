@@ -1,22 +1,35 @@
 import Logger
 
-defmodule MessageConsoleHandler do
+defmodule MessageLogger do
     use GenEvent
 
     def handle_event(new_messages, context) when is_list(new_messages) do
         {_, new_context} = Enum.map_reduce(
-            new_messages,
+            sort_messages(new_messages),
             context,
             fn m, acc ->
                 c = build_context(m)
-                if (c != acc) do
-                    display_context(m)
-                end
+                unless c == acc, do: display_context(m)
                 display_message(m)
                 {m, c}
             end
         )
         {:ok, new_context}
+    end
+
+
+    def sort_messages(messages) when is_list(messages) do
+        groups = Enum.map(
+            Enum.group_by(messages, &build_context/1),
+            fn {k, ms} -> {k, Enum.max(Enum.map(ms, &(&1[:timestamp])))} end
+        )
+        Enum.sort(
+            messages,
+            &(
+                Dict.get(groups, build_context(&1)) <= Dict.get(groups, build_context(&2))
+                && &1[:timestamp] <= &2[:timestamp]
+            )
+        )
     end
 
 
@@ -27,14 +40,14 @@ defmodule MessageConsoleHandler do
 
     defp display_message(m) do
         Logger.log(
-            get_level(m[:sender_email] <> m[:subject]),
+            get_level(Integer.to_string(m[:sender_id]) <> m[:subject]),
             "#{m[:sender_short_name]}: #{m[:content]}"
         )
     end
 
 
     defp build_context(m) do
-        m[:display_recipient] <> m[:subject]
+        String.to_atom(m[:display_recipient] <> " " <> m[:subject])
     end
 
 

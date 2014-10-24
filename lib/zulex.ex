@@ -42,7 +42,7 @@ defmodule ZulEx do
                 ]
             )
         )
-        MessageClient.request_new_messages(:messageClient, MessageConsoleHandler, "")
+        MessageClient.request_new_messages(:messageClient, MessageLogger, "")
     end
 
 
