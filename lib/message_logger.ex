@@ -3,6 +3,18 @@ import Logger
 defmodule MessageLogger do
     use GenEvent
 
+    @colors [
+        IO.ANSI.blue,
+        IO.ANSI.bright,
+        IO.ANSI.cyan,
+        IO.ANSI.green,
+        IO.ANSI.magenta,
+        IO.ANSI.red,
+        IO.ANSI.white,
+        IO.ANSI.yellow
+    ]
+
+
     def handle_event(new_messages, context) when is_list(new_messages) do
         {_, new_context} = Enum.map_reduce(
             sort_messages(new_messages),
@@ -34,14 +46,15 @@ defmodule MessageLogger do
 
 
     defp display_context(m) do
-        Logger.debug("███ #{m[:display_recipient]} » #{m[:subject]}")
+        IO.puts("███ #{m[:display_recipient]} » #{m[:subject]}")
     end
 
 
     defp display_message(m) do
-        Logger.log(
-            get_level(Integer.to_string(m[:sender_id]) <> m[:subject]),
-            "#{m[:sender_short_name]}: #{m[:content]}"
+        IO.puts(
+            get_color(Integer.to_string(m[:sender_id]) <> m[:subject]) <>
+            "#{m[:sender_short_name]}: #{m[:content]}" <>
+            IO.ANSI.default_background <> IO.ANSI.default_color
         )
     end
 
@@ -51,15 +64,19 @@ defmodule MessageLogger do
     end
 
 
-    defp get_level(string) do
-        all_levels = [:error, :warn, :info]
-        keys = Enum.reduce(
-            String.codepoints(string),
-            0, # acc
-            fn << c :: utf8 >>, acc ->
-                rem(c + acc, Enum.count(all_levels))
-            end
-        )
-        Enum.fetch!(all_levels, keys)
+    defp get_color(string) do
+        if IO.ANSI.enabled? do
+            count = Enum.count(@colors)
+            keys = Enum.reduce(
+                String.codepoints(string),
+                0, # acc
+                fn << c :: utf8 >>, acc ->
+                    rem(c + acc, count)
+                end
+            )
+            Enum.fetch!(@colors, keys)
+        else
+            ""
+        end
     end
 end
