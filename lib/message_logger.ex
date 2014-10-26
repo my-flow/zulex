@@ -1,5 +1,3 @@
-import Logger
-
 defmodule MessageLogger do
     use GenEvent
 

@@ -1,4 +1,3 @@
-import Logger
 import Supervisor.Spec
 
 defmodule QueueClient do
@@ -22,24 +21,28 @@ defmodule QueueClient do
             }
         ]
 
-        response = QueueProcessor.post(
-            "",
-            URI.encode_query(%{"event_types" => :jsx.encode(["message"])}),
-            [{"Content-Type", "application/x-www-form-urlencoded"}],
-            [ibrowse: ibrowse]
-        )
+        try do
 
-        %HTTPotion.Response{body: json, status_code: status_code} = response
-        cond do
-            !HTTPotion.Response.success?(response) ->
-                reply {:error, "Request failed with HTTP status code #{status_code}."}
-            json[:result] == "error" ->
-                reply {:error, "Received the following message from Zulip server: \"#{json[:msg]}\""}
-            true ->
-                reply request_messages(json[:queue_id], json[:last_event_id], credentials)
+            response = QueueProcessor.post(
+                "",
+                URI.encode_query(%{"event_types" => :jsx.encode(["message"])}),
+                [{"Content-Type", "application/x-www-form-urlencoded"}],
+                [ibrowse: ibrowse]
+            )
+
+            %HTTPotion.Response{body: json, status_code: status_code} = response
+            cond do
+                !HTTPotion.Response.success?(response) ->
+                    reply {:error, "Request failed with HTTP status code #{status_code}."}
+                json[:result] == "error" ->
+                    reply {:error, "Received the following message from Zulip server: \"#{json[:msg]}\""}
+                true ->
+                    reply request_messages(json[:queue_id], json[:last_event_id], credentials)
+            end
+
+        rescue
+            e in HTTPotion.HTTPError -> reply {:error, e.message}
         end
-
-        reply :ok
     end
 
 

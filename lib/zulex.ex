@@ -26,6 +26,17 @@ defmodule ZulEx do
     end
 
 
+    def whois(user) do
+        unless Process.whereis(:userClient) do
+            Supervisor.start_child(
+                ZulEx.Supervisor,
+                worker(UserClient, [get_api_credentials, [name: :userClient]])
+            )
+        end
+        UserClient.find_users(:userClient, user)
+    end
+
+
     defp start_child(credentials = %ZulipAPICredentials{}) do
         Supervisor.start_child(
             ZulEx.Supervisor,
