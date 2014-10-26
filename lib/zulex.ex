@@ -5,9 +5,8 @@ defmodule ZulEx do
     use Application
 
     def start(_type, _args) do
-        opts = [strategy: :one_for_one, name: ZulEx.Supervisor]
         Task.async(fn -> ZulEx.auto_initialize end)
-        Supervisor.start_link([], opts)
+        Supervisor.start_link([], [strategy: :one_for_one, name: ZulEx.Supervisor])
     end
 
 
@@ -28,21 +27,11 @@ defmodule ZulEx do
 
 
     defp start_child(credentials = %ZulipAPICredentials{}) do
-        {:ok, pid} = QueueClient.start_link(credentials, [name: :queueClient])
-        {queue_id, last_event_id} = QueueClient.register_queue(pid)
-
         Supervisor.start_child(
             ZulEx.Supervisor,
-            worker(
-                MessageClient, [
-                    queue_id,
-                    last_event_id,
-                    credentials,
-                    [name: :messageClient]
-                ]
-            )
+            worker(QueueClient, [credentials, [name: :queueClient]])
         )
-        MessageClient.request_new_messages(:messageClient, MessageLogger, "")
+        QueueClient.register_queue(:queueClient)
     end
 
 

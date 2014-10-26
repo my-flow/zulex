@@ -5,15 +5,15 @@ defmodule MessageClient do
 
 
     def start_link(queue_id, last_event_id, credentials = %ZulipAPICredentials{}, opts) when is_integer(last_event_id) do
-        GenEvent.start_link(name: EventManager)
+        GenEvent.start_link(name: :eventManager)
         GenServer.start_link(__MODULE__, {queue_id, last_event_id, credentials}, opts)
     end
 
 
-    defcall request_new_messages(handler, args) do
-        GenEvent.add_handler(EventManager, handler, args)
-        MessageClient.request_new_messages(:messageClient)
-        reply :ok
+    defcall request_new_messages(handler, args, last_event_id), state: {queue_id, _, credentials} do
+        GenEvent.add_handler(:eventManager, handler, args)
+        __MODULE__.request_new_messages(:messageClient)
+        set_and_reply {queue_id, last_event_id, credentials}, :ok
     end
 
 
@@ -30,8 +30,8 @@ defmodule MessageClient do
 
         MessageProcessor.get(
             URI.encode_query(%{
-                    "queue_id"      => queue_id,
-                    "last_event_id" => last_event_id
+                "queue_id"      => queue_id,
+                "last_event_id" => last_event_id
             }),
             [], # empty headers
             [
@@ -62,7 +62,7 @@ defmodule MessageClient do
 
             messages = Enum.filter_map(events, fn e -> e[:message] != nil end, fn e -> e[:message] end)
             unless Enum.empty?(messages), do:
-                GenEvent.notify(EventManager, messages)
+                GenEvent.notify(:eventManager, messages)
 
             max_event_id = List.foldl(
                 events,
@@ -78,7 +78,8 @@ defmodule MessageClient do
 
     definfo %HTTPotion.AsyncEnd{}, state: {_, last_event_id, _}, export: false do
         if (is_integer(last_event_id)) do
-            MessageClient.request_new_messages(self)
+            QueueClient.update_last_event_id(:queueClient, last_event_id)
+            __MODULE__.request_new_messages(self)
         end
         noreply
     end
