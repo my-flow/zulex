@@ -5,7 +5,7 @@ defmodule ZulEx do
     use Application
 
     def start(_type, _args) do
-        Task.async(fn -> ZulEx.auto_initialize end)
+        Task.async(fn -> auto_initialize end)
         Supervisor.start_link([], [strategy: :one_for_one, name: ZulEx.Supervisor])
     end
 
@@ -20,8 +20,8 @@ defmodule ZulEx do
 
 
     def connect do
-        email = String.strip IO.gets "Please enter your Zulip email address: "
-        key   = String.strip IO.gets "Please enter your Zulip API key      : "
+        email = String.to_char_list String.strip IO.gets "Please enter your Zulip email address: "
+        key   = String.to_char_list String.strip IO.gets "Please enter your Zulip API key      : "
         start_child(%ZulipAPICredentials{email: email, key: key})
     end
 
@@ -47,16 +47,20 @@ defmodule ZulEx do
 
 
     defp get_api_credentials do
-        email = System.get_env("ZULIP_USERNAME")
-        key   = System.get_env("ZULIP_API_KEY")
+        basic_auth = Dict.get(Application.get_env(:zulex, :ibrowse, []), :basic_auth)
+        if basic_auth && tuple_size(basic_auth) == 2, do: {email, key} = basic_auth
 
-        if (email && key) do
-            %ZulipAPICredentials{
-                email: email,
-                key:   key
-            }
-        else
-            nil
+        if !email || !key do
+            email = System.get_env("ZULIP_USERNAME")
+            key   = System.get_env("ZULIP_API_KEY")
         end
+
+        email = if is_binary(email), do: String.to_char_list(email), else: email
+        key   = if is_binary(key),   do: String.to_char_list(key),   else: key
+
+        if email && key,
+            do: %ZulipAPICredentials{email: email, key: key},
+        else:
+            nil
     end
 end

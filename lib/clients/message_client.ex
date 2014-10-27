@@ -19,14 +19,7 @@ defmodule MessageClient do
 
     defcast request_new_messages, state: {queue_id, last_event_id, %ZulipAPICredentials{key: key, email: email}} do
         HTTPotion.start
-        ibrowse = [
-            proxy_host: String.to_char_list("localhost"),
-            proxy_port: 8080,
-            basic_auth: {
-                String.to_char_list(email),
-                String.to_char_list(key)
-            }
-        ]
+        ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
         MessageProcessor.get(
             URI.encode_query(%{

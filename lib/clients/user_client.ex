@@ -8,14 +8,7 @@ defmodule UserClient do
 
     defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email} do
         HTTPotion.start
-        ibrowse = [
-            proxy_host: String.to_char_list("localhost"),
-            proxy_port: 8080,
-            basic_auth: {
-                String.to_char_list(email),
-                String.to_char_list(key)
-            }
-        ]
+        ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
         try do
             response = UserProcessor.get(
@@ -32,7 +25,7 @@ defmodule UserClient do
                 !HTTPotion.Response.success?(response) ->
                     reply {:error, "Request failed with HTTP status code #{status_code}."}
                 json[:result] == "error" ->
-                    reply {:error, "Received the following message from Zulip server: \"#{json[:msg]}\""}
+                    reply {:error, "Received the following error message from Zulip server: \"#{json[:msg]}\""}
                 true ->
                     reply filter_users(json[:members], user)
             end
