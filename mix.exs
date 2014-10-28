@@ -19,8 +19,8 @@ defmodule Zulex.Mixfile do
   defp deps do
     [
       {:exactor, "~> 1.0.0"},
-      {:ibrowse,   github: "cmullaparthi/ibrowse",   tag: "v4.1.0"},
-      {:httpotion, github: "kemonomachi/httpotion",  tag: "v0.2.4"},
+      {:ibrowse,   github: "cmullaparthi/ibrowse",   tag: "v4.1.1"},
+      {:httpotion, github: "my-flow/httpotion",      branch: "master"},
       {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"}
     ]
   end
