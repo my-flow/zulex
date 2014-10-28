@@ -1,12 +1,15 @@
+import Logger
+
 defmodule UserClient do
-    use ExActor.GenServer
+    use ExActor.Tolerant
+
 
     def start_link(credentials = %ZulipAPICredentials{}, opts) do
         GenServer.start_link(__MODULE__, credentials, opts)
     end
 
 
-    defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email} do
+    defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email}, timeout: :timer.seconds(10) do
         HTTPotion.start
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
@@ -23,15 +26,20 @@ defmodule UserClient do
             %HTTPotion.Response{body: json, status_code: status_code} = response
             cond do
                 !HTTPotion.Response.success?(response) ->
-                    reply {:error, "Request failed with HTTP status code #{status_code}."}
+                    msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
+                    Logger.error(msg)
+                    reply {:error, msg}
                 json[:result] == "error" ->
-                    reply {:error, "Received the following error message from Zulip server: \"#{json[:msg]}\""}
+                    Logger.error(json[:msg])
+                    reply {:error, json[:msg]}
                 true ->
                     reply filter_users(json[:members], user)
             end
 
         rescue
-            e in HTTPotion.HTTPError -> reply {:error, e.message}
+            e in HTTPotion.HTTPError ->
+                Logger.error "#{__MODULE__}: #{e.message}"
+                reply {:error, e.message}
         end
     end
 

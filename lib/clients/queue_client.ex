@@ -1,7 +1,8 @@
+import Logger
 import Supervisor.Spec
 
 defmodule QueueClient do
-    use ExActor.GenServer
+    use ExActor.Tolerant
 
     @default_event_id -1
 
@@ -15,10 +16,9 @@ defmodule QueueClient do
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
         try do
-
             response = QueueProcessor.post(
                 "",
-                URI.encode_query(%{"event_types" => :jsx.encode(["message"])}),
+                URI.encode_query(%{"event_types" => JSEX.encode!(["message"])}),
                 [{"Content-Type", "application/x-www-form-urlencoded"}],
                 [ibrowse: ibrowse]
             )
@@ -26,15 +26,20 @@ defmodule QueueClient do
             %HTTPotion.Response{body: json, status_code: status_code} = response
             cond do
                 !HTTPotion.Response.success?(response) ->
-                    reply {:error, "Request failed with HTTP status code #{status_code}."}
+                    msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
+                    Logger.error(msg)
+                    reply {:error, msg}
                 json[:result] == "error" ->
-                    reply {:error, "Received the following error message from Zulip server: \"#{json[:msg]}\""}
+                    Logger.error(json[:msg])
+                    reply {:error, json[:msg]}
                 true ->
                     reply request_messages(json[:queue_id], json[:last_event_id], credentials)
             end
 
         rescue
-            e in HTTPotion.HTTPError -> reply {:error, e.message}
+            e in HTTPotion.HTTPError ->
+                Logger.error "#{__MODULE__}: #{e.message}"
+                reply {:error, e.message}
         end
     end
 
@@ -48,6 +53,12 @@ defmodule QueueClient do
         Supervisor.restart_child(ZulEx.Supervisor, pid)
         Process.monitor(:messageClient)
         MessageClient.request_new_messages(:messageClient, MessageLogger, "", last_event_id)
+        noreply
+    end
+
+
+    definfo {_, {:error, {_, {:error, reason}}}} do
+        Logger.error "#{__MODULE__}: #{to_string(reason)}"
         noreply
     end
 

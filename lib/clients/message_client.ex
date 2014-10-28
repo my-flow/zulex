@@ -1,7 +1,7 @@
 import Logger
 
 defmodule MessageClient do
-    use ExActor.GenServer
+    use ExActor.Tolerant
 
 
     def start_link(queue_id, last_event_id, credentials = %ZulipAPICredentials{}, opts) when is_integer(last_event_id) do
@@ -21,18 +21,23 @@ defmodule MessageClient do
         HTTPotion.start
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
-        MessageProcessor.get(
-            URI.encode_query(%{
-                "queue_id"      => queue_id,
-                "last_event_id" => last_event_id
-            }),
-            [], # empty headers
-            [
-                stream_to: self,
-                ibrowse:   ibrowse,
-                timeout:   600_000
-            ]
-        )
+        try do
+            MessageProcessor.get(
+                URI.encode_query(%{
+                    "queue_id"      => queue_id,
+                    "last_event_id" => last_event_id
+                }),
+                [], # empty headers
+                [
+                    stream_to: self,
+                    ibrowse:   ibrowse,
+                    timeout:   600_000
+                ]
+            )
+        rescue
+            e in HTTPotion.HTTPError ->
+                Logger.error "#{__MODULE__}: #{e.message}"
+        end
         noreply
     end
 
@@ -46,9 +51,9 @@ defmodule MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncChunk{chunk: json}, state: {queue_id, last_event_id, credentials}, export: false do
+    definfo %HTTPotion.AsyncChunk{chunk: json}, state: {queue_id, last_event_id, credentials}, export: false, when: is_map(json) do
         if (json[:result] == "error"), do:
-            Logger.warn "Received the following message from Zulip server: \"#{json[:msg]}\""
+            Logger.warn json[:msg]
 
         if (Dict.has_key? json, :events) do
             events = Dict.get(json, :events)
@@ -69,11 +74,22 @@ defmodule MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncEnd{}, state: {_, last_event_id, _}, export: false do
-        if (is_integer(last_event_id)) do
-            QueueClient.update_last_event_id(:queueClient, last_event_id)
-            __MODULE__.request_new_messages(self)
-        end
+    definfo %HTTPotion.AsyncChunk{chunk: {:error, reason}}, export: false do
+        Logger.error "#{__MODULE__}: #{inspect reason}"
+        __MODULE__.request_new_messages(self)
+        noreply
+    end
+
+
+    definfo %HTTPotion.AsyncEnd{}, state: {_, last_event_id, _}, export: false, when: is_integer(last_event_id) do
+        QueueClient.update_last_event_id(:queueClient, last_event_id)
+        __MODULE__.request_new_messages(self)
+        noreply
+    end
+
+
+    definfo _, export: false do
+        Process.exit self, :kill
         noreply
     end
 end

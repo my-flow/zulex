@@ -42,7 +42,7 @@ defmodule ZulEx do
             ZulEx.Supervisor,
             worker(QueueClient, [credentials, [name: :queueClient]])
         )
-        QueueClient.register_queue(:queueClient)
+       QueueClient.register_queue(:queueClient)
     end
 
 

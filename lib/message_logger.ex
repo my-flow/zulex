@@ -1,3 +1,5 @@
+import Logger
+
 defmodule MessageLogger do
     use GenEvent
 
@@ -7,7 +9,6 @@ defmodule MessageLogger do
         IO.ANSI.cyan,
         IO.ANSI.green,
         IO.ANSI.magenta,
-        IO.ANSI.red,
         IO.ANSI.white,
         IO.ANSI.yellow
     ]
@@ -29,10 +30,14 @@ defmodule MessageLogger do
 
 
     def sort_messages(messages) when is_list(messages) do
-        groups = Enum.map(
-            Enum.group_by(messages, &build_context/1),
-            fn {k, ms} -> {k, Enum.max(Enum.map(ms, &(&1[:timestamp])))} end
+        groups = Enum.into(
+            Enum.map(
+                Enum.group_by(messages, &build_context/1),
+                fn {k, ms} -> {k, Enum.max(Enum.map(ms, &(&1[:timestamp])))} end
+            ),
+            %{}
         )
+
         Enum.sort(
             messages,
             &(
@@ -44,7 +49,12 @@ defmodule MessageLogger do
 
 
     defp display_context(m) do
-        IO.puts("███ #{m[:display_recipient]} » #{m[:subject]}")
+        r = m[:display_recipient]
+        case r do
+            [head|_]            -> line = "You and #{head[:full_name]}"
+            _ when is_binary(r) -> line = "#{r} » #{m[:subject]}"
+        end
+        IO.puts("███ #{line}")
     end
 
 
@@ -58,7 +68,7 @@ defmodule MessageLogger do
 
 
     defp build_context(m) do
-        String.to_atom(m[:display_recipient] <> " " <> m[:subject])
+        inspect(m[:display_recipient]) <> " " <> inspect(m[:subject])
     end
 
 
