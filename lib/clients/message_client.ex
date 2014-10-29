@@ -3,64 +3,49 @@ import Logger
 defmodule MessageClient do
     use ExActor.Tolerant
 
-    @default_queue_id -1
-    @default_event_id -1
-    @default_async_id -1
+
+    defmodule State do
+        defstruct queue_id: -1, event_id: -1, async_id: -1, credentials: nil
+    end
 
 
     def start_link(handler, args, credentials = %ZulipAPICredentials{}, opts) do
         GenEvent.start_link(name: :eventManager)
         GenEvent.add_handler(:eventManager, handler, args)
-        GenServer.start_link(__MODULE__, {@default_queue_id, @default_event_id, @default_async_id, credentials}, opts)
+        GenServer.start_link(__MODULE__, %State{:credentials => credentials}, opts)
     end
 
 
-    defcall set_parameters(queue_id, last_event_id), state: {_, _, async_id, credentials} do
-        set_and_reply {queue_id, last_event_id, async_id, credentials}, :ok
+    defcall set_parameters(queue_id, event_id), state: state do
+        set_and_reply %{state | :queue_id => queue_id, :event_id => event_id}, :ok
     end
 
 
-    defcast request_new_messages, 
-    state: {queue_id, last_event_id, _, credentials = %ZulipAPICredentials{key: key, email: email}} do
-
-        HTTPotion.start
-        ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
-
+    defcall request_new_messages, state: state = %State{} do
         try do
-            %HTTPotion.AsyncResponse{id: id} = MessageProcessor.get(
-                URI.encode_query(%{
-                    "queue_id"      => queue_id,
-                    "last_event_id" => last_event_id
-                }),
-                [], # empty headers
-                [
-                    stream_to: self,
-                    ibrowse:   ibrowse,
-                    timeout:   600_000
-                ]
-            )
-            new_state {queue_id, last_event_id, id, credentials} # set async_id <= id
+            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages(state)
+            set_and_reply %{state | :async_id => async_id}, async_id
         rescue
             e in HTTPotion.HTTPError ->
                 Logger.error "#{__MODULE__}: #{e.message}"
-            noreply
+                reply {:error, e.message}
         end
     end
 
 
     definfo %HTTPotion.AsyncHeaders{id: id, status_code: status_code}, 
-    state: {_, _, async_id, credentials}, export: false, when: id == async_id do
+    state: %State{:async_id => async_id, :credentials => credentials}, export: false, when: id == async_id do
 
         unless status_code in 200..299 or status_code in [302, 304] do
             Logger.error "Request failed with HTTP status code #{status_code}."
-            new_state {@default_queue_id, @default_event_id, @default_async_id, credentials}
+            new_state %State{:credentials => credentials}
         end
         noreply
     end
 
 
     definfo %HTTPotion.AsyncChunk{id: id, chunk: json}, 
-    state: {queue_id, last_event_id, async_id, credentials}, 
+    state: state = %State{:event_id => event_id, :async_id => async_id, :credentials => credentials}, 
     export: false, when: is_map(json) and id == async_id do
 
         if (json[:result] == "error"), do:
@@ -75,18 +60,18 @@ defmodule MessageClient do
 
             max_event_id = List.foldl(
                 events,
-                last_event_id,
+                event_id,
                 fn e, acc -> max(e[:id], acc) end
             )
-            new_state {queue_id, max_event_id, async_id, credentials}
+            new_state %{state | :event_id => max_event_id}
         else
-            new_state {@default_queue_id, @default_event_id, @default_async_id, credentials}
+            new_state %State{:credentials => credentials}
         end
     end
 
 
     definfo %HTTPotion.AsyncChunk{id: id, chunk: {:error, reason}}, 
-    state: {_, _, async_id, _}, export: false, when: id == async_id do
+    state: %State{:async_id => async_id}, export: false, when: id == async_id do
 
         Logger.error "#{__MODULE__}: #{inspect reason}"
         __MODULE__.request_new_messages(self)
@@ -94,9 +79,28 @@ defmodule MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncEnd{id: id}, state: {_, last_event_id, async_id, _}, export: false, when: id == async_id do
-        QueueClient.update_last_event_id(:queueClient, last_event_id)
-        __MODULE__.request_new_messages(self)
+    definfo %HTTPotion.AsyncEnd{id: id},
+    state: state = %State{:event_id => event_id, :async_id => async_id}, export: false, when: id == async_id do
+        QueueClient.update_event_id(:queueClient, event_id)
+        try do
+            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages(state)
+            new_state %{state | :async_id => async_id}
+        rescue
+            e in HTTPotion.HTTPError ->
+                Logger.error "#{__MODULE__}: #{e.message}"
+                noreply
+        end
+    end
+
+
+    definfo {_, {:error, {_, {:error, reason}}}} do
+        Logger.error "#{__MODULE__}: #{to_string(reason)}"
+        noreply
+    end
+
+
+    definfo {_, {:error, reason}} do
+        Logger.error "#{__MODULE__}: #{to_string(reason)}"
         noreply
     end
 
@@ -104,5 +108,28 @@ defmodule MessageClient do
     definfo msg, export: false do
         Logger.debug("Ignoring #{inspect msg}")
         noreply
+    end
+
+
+    # private functions
+
+    defp _request_new_messages(
+        %State{:queue_id => queue_id, :event_id => event_id, :credentials => %ZulipAPICredentials{key: key, email: email}}) do
+
+        HTTPotion.start
+        ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
+
+        MessageProcessor.get(
+            URI.encode_query(%{
+                "queue_id"      => queue_id,
+                "last_event_id" => event_id
+            }),
+            [], # empty headers
+            [
+                stream_to: self,
+                ibrowse:   ibrowse,
+                timeout:   600_000
+            ]
+        )
     end
 end

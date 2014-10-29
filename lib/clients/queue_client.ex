@@ -4,39 +4,38 @@ import Supervisor.Spec
 defmodule QueueClient do
     use ExActor.Tolerant
 
-    @default_event_id -1
 
-
-    def start_link(credentials = %ZulipAPICredentials{}, opts) do
-        GenServer.start_link(__MODULE__, {@default_event_id, credentials}, opts)
+    defmodule State do
+        defstruct event_id: -1, async_id: -1, credentials: nil
     end
 
 
-    defcall register_queue, state: {_, credentials = %ZulipAPICredentials{key: key, email: email}} do
+    def start_link(credentials = %ZulipAPICredentials{}, opts) do
+        GenServer.start_link(__MODULE__, %State{:credentials => credentials}, opts)
+    end
+
+
+    defcall register_queue,
+    state: state = %State{:credentials => %ZulipAPICredentials{key: key, email: email}} do
+
         HTTPotion.start
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
         try do
-            response = QueueProcessor.post(
+            %HTTPotion.AsyncResponse{id: async_id} = QueueProcessor.post(
                 "",
-                URI.encode_query(%{"event_types" => JSEX.encode!(["message"])}),
-                [{"Content-Type", "application/x-www-form-urlencoded"}],
-                [ibrowse: ibrowse]
+                URI.encode_query(%{
+                    "event_types" => JSEX.encode!(["message"])
+                }),
+                [
+                    {"Content-Type", "application/x-www-form-urlencoded"}
+                ],
+                [
+                    stream_to: self,
+                    ibrowse: ibrowse
+                ]
             )
-
-            %HTTPotion.Response{body: json, status_code: status_code} = response
-            cond do
-                !HTTPotion.Response.success?(response) ->
-                    msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-                    Logger.error(msg)
-                    reply {:error, msg}
-                json[:result] == "error" ->
-                    Logger.error(json[:msg])
-                    reply {:error, json[:msg]}
-                true ->
-                    reply request_messages(json[:queue_id], json[:last_event_id], credentials)
-            end
-
+            set_and_reply %{state | :async_id => async_id}, async_id
         rescue
             e in HTTPotion.HTTPError ->
                 Logger.error "#{__MODULE__}: #{e.message}"
@@ -45,8 +44,38 @@ defmodule QueueClient do
     end
 
 
-    defcall update_last_event_id(last_event_id), state: {_, credentials} do
-        set_and_reply {last_event_id, credentials}, last_event_id
+    defcall update_event_id(event_id), state: state = %State{} do
+        set_and_reply %{state | :event_id => event_id}, event_id
+    end
+
+
+    definfo %HTTPotion.AsyncHeaders{id: id, status_code: status_code},
+    state: %State{:async_id => async_id, :credentials => credentials},
+    export: false, when: id == async_id do
+
+        unless status_code in 200..299 or status_code in [302, 304] do
+            Logger.error "Request failed with HTTP status code #{status_code}."
+            new_state %State{:credentials => credentials}
+        end
+        noreply
+    end
+
+
+    definfo %HTTPotion.AsyncChunk{id: id, chunk: json},
+    state: %State{:async_id => async_id, :credentials => credentials},
+    export: false, when: is_map(json) and id == async_id do
+
+        if (json[:result] == "error"), do:
+            Logger.warn json[:msg]
+
+        request_messages(json[:queue_id], json[:last_event_id], credentials)
+        noreply
+    end
+
+
+    definfo %HTTPotion.AsyncEnd{id: id},
+    state: %State{:async_id => async_id}, export: false, when: id == async_id do
+        noreply
     end
 
 
@@ -70,9 +99,15 @@ defmodule QueueClient do
     end
 
 
+    definfo msg, export: false do
+        Logger.debug("Ignoring #{inspect msg}")
+        noreply
+    end
+
+
     # private functions
 
-    defp request_messages(queue_id, last_event_id, credentials) do
+    defp request_messages(queue_id, event_id, credentials) do
         unless Process.whereis(:messageClient) do
             Supervisor.start_child(
                 ZulEx.Supervisor,
@@ -80,7 +115,7 @@ defmodule QueueClient do
             )
             Process.monitor(:messageClient)
         end
-        MessageClient.set_parameters(:messageClient, queue_id, last_event_id)
+        MessageClient.set_parameters(:messageClient, queue_id, event_id)
         MessageClient.request_new_messages(:messageClient)
     end
 end
