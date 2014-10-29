@@ -1,6 +1,6 @@
 import Logger
 
-defmodule UserClient do
+defmodule SubscriptionClient do
     use ExActor.GenServer
 
 
@@ -9,18 +9,17 @@ defmodule UserClient do
     end
 
 
-    defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email} do
+    defcall read_subscriptions(name), state: %ZulipAPICredentials{key: key, email: email} do
 
         try do
             HTTPotion.start
             ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
-            response = UserProcessor.get(
+            response = SubscriptionProcessor.get(
                 "",
                 [], # empty headers
                 [
-                    ibrowse: ibrowse,
-                    timeout: 600_000
+                    ibrowse: ibrowse
                 ]
             )
 
@@ -34,7 +33,7 @@ defmodule UserClient do
                     Logger.error(json[:msg])
                     reply {:error, json[:msg]}
                 true ->
-                    reply filter_users(json[:members], user)
+                    reply filter_subscriptions(json[:subscriptions], name)
             end
 
         rescue
@@ -47,21 +46,26 @@ defmodule UserClient do
 
     # private functions
 
-    defp filter_users(members, user) when is_binary(user) or is_atom(user) do
-        regex = case user do
+    defp filter_subscriptions(subscriptions, name) when is_binary(name) or is_atom(name) do
+        regex = case name do
             :all -> ".*"
-            _ -> user
+            _ -> name
         end
-        filter_users(members, Regex.compile!(regex, "iu"))
+        filter_subscriptions(subscriptions, Regex.compile!(regex, "iu"))
     end
 
 
-    defp filter_users(members, regex = %Regex{}) do
+    defp filter_subscriptions(subscriptions, regex = %Regex{}) do
         Enum.filter(
-            members,
-            fn m ->
-                Enum.any?(Dict.values(m), fn v -> is_binary(v) && Regex.match?(regex, v) end)
+            reduce_subscriptions(subscriptions),
+            fn name ->
+                is_binary(name) && Regex.match?(regex, name)
             end
         )
+    end
+
+
+    defp reduce_subscriptions(subscriptions) when is_list(subscriptions) do
+        Enum.map(subscriptions, &Dict.get(&1, :name))
     end
 end

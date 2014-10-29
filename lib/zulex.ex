@@ -27,30 +27,64 @@ defmodule ZulEx do
     end
 
 
+    def read_subscriptions(name \\ :all, handle_undefined \\ :ask)
+
+
+    def read_subscriptions(name, handle_undefined) when is_binary(name) or is_atom(:all) do
+        _read_subscriptions(name, handle_undefined)
+    end
+
+
+    def read_subscriptions(regex = %Regex{}, handle_undefined) do
+        _read_subscriptions(regex, handle_undefined)
+    end
+
+
+    def read_users(handle_undefined \\ :ask) do
+        _read_users(:all, handle_undefined)
+    end
+
+
     def whois(user, handle_undefined \\ :ask)
 
 
-    def whois(user, handle_undefined) when is_binary(user) do
-        _whois(user, handle_undefined)
+    def whois(user, handle_undefined) when is_binary(user) or is_atom(user) do
+        _read_users(user, handle_undefined)
     end
 
 
     def whois(regex = %Regex{}, handle_undefined) do
-        _whois(regex, handle_undefined)
+        _read_users(regex, handle_undefined)
     end
 
 
     # private functions
 
-    defp _whois(user, handle_undefined) do
+    defp _read_subscriptions(name, handle_undefined \\ :ask) do
         credentials = get_credentials(handle_undefined)
-        unless Process.whereis(:userClient) do
-            Supervisor.start_child(
-                ZulEx.Supervisor,
-                worker(UserClient, [credentials, [name: :userClient]])
-            )
+        if credentials do
+            unless Process.whereis(:subscriptionClient) do
+                Supervisor.start_child(
+                    ZulEx.Supervisor,
+                    worker(SubscriptionClient, [credentials, [name: :subscriptionClient]])
+                )
+            end
+            SubscriptionClient.read_subscriptions(:subscriptionClient, name)
         end
-        UserClient.find_users(:userClient, user)
+    end
+
+
+    defp _read_users(user, handle_undefined) do
+        credentials = get_credentials(handle_undefined)
+        if credentials do
+            unless Process.whereis(:userClient) do
+                Supervisor.start_child(
+                    ZulEx.Supervisor,
+                    worker(UserClient, [credentials, [name: :userClient]])
+                )
+            end
+            UserClient.find_users(:userClient, user)
+        end
     end
 
 
