@@ -1,8 +1,8 @@
 use Mix.Config
 
 config :logger, :console,
-    level: :debug,
-    format: "$date $time [$level] $metadata$message\n",
+    level: :warn,
+    format: "$date $time [$level]$levelpad $metadata$message\n",
     metadata: [:user_id]
 
 

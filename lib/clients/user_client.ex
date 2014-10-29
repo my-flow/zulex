@@ -9,7 +9,7 @@ defmodule UserClient do
     end
 
 
-    defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email}, timeout: :timer.seconds(10) do
+    defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email} do
         HTTPotion.start
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 

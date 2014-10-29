@@ -50,15 +50,21 @@ defmodule QueueClient do
     end
 
 
-    definfo {:DOWN, _, :process, pid, _}, state: {last_event_id, _} do
+    definfo {:DOWN, _, :process, pid, _} do
         Supervisor.restart_child(ZulEx.Supervisor, pid)
         Process.monitor(:messageClient)
-        MessageClient.request_new_messages(:messageClient, MessageLogger, "", last_event_id)
+        MessageClient.request_new_messages(:messageClient)
         noreply
     end
 
 
     definfo {_, {:error, {_, {:error, reason}}}} do
+        Logger.error "#{__MODULE__}: #{to_string(reason)}"
+        noreply
+    end
+
+
+    definfo {_, {:error, reason}} do
         Logger.error "#{__MODULE__}: #{to_string(reason)}"
         noreply
     end
@@ -70,10 +76,11 @@ defmodule QueueClient do
         unless Process.whereis(:messageClient) do
             Supervisor.start_child(
                 ZulEx.Supervisor,
-                worker(MessageClient, [queue_id, last_event_id, credentials, [name: :messageClient]])
+                worker(MessageClient, [MessageLogger, "", credentials, [name: :messageClient]])
             )
             Process.monitor(:messageClient)
         end
-        MessageClient.request_new_messages(:messageClient, MessageLogger, "", last_event_id)
+        MessageClient.set_parameters(:messageClient, queue_id, last_event_id)
+        MessageClient.request_new_messages(:messageClient)
     end
 end
