@@ -48,6 +48,8 @@ defmodule MessageLogger do
     end
 
 
+    # private functions
+
     defp display_context(m) do
         r = m[:display_recipient]
         case r do

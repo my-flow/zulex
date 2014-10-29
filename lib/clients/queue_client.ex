@@ -6,6 +6,7 @@ defmodule QueueClient do
 
     @default_event_id -1
 
+
     def start_link(credentials = %ZulipAPICredentials{}, opts) do
         GenServer.start_link(__MODULE__, {@default_event_id, credentials}, opts)
     end
@@ -66,18 +67,13 @@ defmodule QueueClient do
     # private functions
 
     defp request_messages(queue_id, last_event_id, credentials) do
-        Supervisor.start_child(
-            ZulEx.Supervisor,
-            worker(
-                MessageClient, [
-                    queue_id,
-                    last_event_id,
-                    credentials,
-                    [name: :messageClient]
-                ]
+        unless Process.whereis(:messageClient) do
+            Supervisor.start_child(
+                ZulEx.Supervisor,
+                worker(MessageClient, [queue_id, last_event_id, credentials, [name: :messageClient]])
             )
-        )
-        Process.monitor(:messageClient)
+            Process.monitor(:messageClient)
+        end
         MessageClient.request_new_messages(:messageClient, MessageLogger, "", last_event_id)
     end
 end

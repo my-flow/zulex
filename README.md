@@ -1,7 +1,7 @@
 ZulEx
 =====
 
-[Zulip](https://zulip.com) reader in Elixir/Erlang with real-time updates.
+A reactive [Zulip](https://zulip.com) reader in Elixir/Erlang with real-time updates.
 
 ## Starting the client
 1. Clone the repository with `git clone git@github.com:my-flow/zulex.git`.
