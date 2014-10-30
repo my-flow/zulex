@@ -7,7 +7,7 @@ defmodule ZulEx do
     def start(_type, _args) do
         Task.async(fn -> read_messages(:ignore) end)
         children = [
-            worker(SessionHandler, [[name: :sessionHandler]])
+            worker(StateHandler, [[name: :stateHandler, restart: :transient]])
         ]
         Supervisor.start_link(children, [strategy: :one_for_one, name: ZulEx.Supervisor])
     end
@@ -16,13 +16,14 @@ defmodule ZulEx do
     def read_messages(handle_undefined \\ :ask) do
         credentials = get_credentials(handle_undefined)
         if credentials do
-            unless Process.whereis(:queueClient) do
-                Supervisor.start_child(
-                    ZulEx.Supervisor,
-                    worker(QueueClient, [credentials, [name: :queueClient]])
-                )
+            if Process.whereis(:queueClient) do
+                :ok = Supervisor.terminate_child(ZulEx.Supervisor, QueueClient)
+                :ok = Supervisor.delete_child(ZulEx.Supervisor, QueueClient)
             end
-            QueueClient.register_queue(:queueClient)
+            Supervisor.start_child(
+                ZulEx.Supervisor,
+                worker(QueueClient, [credentials, [name: :queueClient, restart: :transient]])
+            )
         end
     end
 
@@ -60,13 +61,13 @@ defmodule ZulEx do
 
     # private functions
 
-    defp _read_subscriptions(name, handle_undefined \\ :ask) do
+    defp _read_subscriptions(name, handle_undefined) do
         credentials = get_credentials(handle_undefined)
         if credentials do
             unless Process.whereis(:subscriptionClient) do
                 Supervisor.start_child(
                     ZulEx.Supervisor,
-                    worker(SubscriptionClient, [credentials, [name: :subscriptionClient]])
+                    worker(SubscriptionClient, [credentials, [name: :subscriptionClient, restart: :transient]])
                 )
             end
             SubscriptionClient.read_subscriptions(:subscriptionClient, name)
@@ -80,7 +81,7 @@ defmodule ZulEx do
             unless Process.whereis(:userClient) do
                 Supervisor.start_child(
                     ZulEx.Supervisor,
-                    worker(UserClient, [credentials, [name: :userClient]])
+                    worker(UserClient, [credentials, [name: :userClient, restart: :transient]])
                 )
             end
             UserClient.find_users(:userClient, user)
@@ -89,12 +90,12 @@ defmodule ZulEx do
 
 
     defp get_credentials(handle_undefined) do
-        unless Process.whereis(:sessionHandler) do
+        unless Process.whereis(:stateHandler) do
             Supervisor.start_child(
                 ZulEx.Supervisor,
-                worker(SessionHandler, [[name: :sessionHandler]])
+                worker(StateHandler, [[name: :stateHandler, restart: :transient]])
             )
         end
-        SessionHandler.authenticate(:sessionHandler, handle_undefined)
+        StateHandler.authenticate(handle_undefined)
     end
 end

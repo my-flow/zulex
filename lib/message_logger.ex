@@ -53,7 +53,7 @@ defmodule MessageLogger do
     defp display_context(m) do
         r = m[:display_recipient]
         case r do
-            [head|_]            -> line = "You and #{head[:full_name]}"
+            [head|[head2|_]]            -> line = "You and #{head2[:full_name]}"
             _ when is_binary(r) -> line = "#{r} » #{m[:subject]}"
         end
         IO.puts("███ #{line}")

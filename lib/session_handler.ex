@@ -1,5 +1,7 @@
+import Logger
+
 defmodule SessionHandler do
-    use ExActor.GenServer
+    use ExActor.GenServer, export: :sessionHandler
 
 
     def start_link(opts) do
@@ -7,10 +9,10 @@ defmodule SessionHandler do
     end
 
 
-    def authenticate(name, handle_undefined \\ :ignore) do
-        result = __MODULE__.authenticate_user(name)
+    def authenticate(handle_undefined \\ :ignore) do
+        result = __MODULE__.authenticate_user
         case result do
-            nil -> __MODULE__.update_credentials(name, read_or_ask_for_credentials(handle_undefined))
+            nil -> __MODULE__.update_credentials(read_or_ask_for_credentials(handle_undefined))
             %ZulipAPICredentials{}  -> result
         end
     end

@@ -1,52 +1,47 @@
 import Logger
 
 defmodule MessageClient do
-    use ExActor.Tolerant
+    use ExActor.Tolerant, export: :messageClient
 
 
-    defmodule State do
-        defstruct queue_id: -1, event_id: -1, async_id: -1, credentials: nil
-    end
-
-
-    def start_link(handler, args, credentials = %ZulipAPICredentials{}, opts) do
+    def start_link(handler, args, opts) do
         GenEvent.start_link(name: :eventManager)
         GenEvent.add_handler(:eventManager, handler, args)
-        GenServer.start_link(__MODULE__, %State{:credentials => credentials}, opts)
+        GenServer.start_link(__MODULE__, nil, opts)
     end
 
 
-    defcall set_parameters(queue_id, event_id), state: state do
-        set_and_reply %{state | :queue_id => queue_id, :event_id => event_id}, :ok
+    definit do
+        request_new_messages
+        initial_state nil
     end
 
 
-    defcall request_new_messages, state: state = %State{} do
+    defcast request_new_messages, export: false do
         try do
-            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages(state)
-            set_and_reply %{state | :async_id => async_id}, async_id
+            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages
+            new_state async_id
         rescue
             e in HTTPotion.HTTPError ->
                 Logger.error "#{__MODULE__}: #{e.message}"
-                reply {:error, e.message}
+                new_state -1
         end
     end
 
 
     definfo %HTTPotion.AsyncHeaders{id: id, status_code: status_code}, 
-    state: %State{:async_id => async_id, :credentials => credentials}, export: false, when: id == async_id do
+    state: async_id, export: false, when: id == async_id do
 
         unless status_code in 200..299 or status_code in [302, 304] do
             Logger.error "Request failed with HTTP status code #{status_code}."
-            new_state %State{:credentials => credentials}
+            new_state -1
         end
         noreply
     end
 
 
     definfo %HTTPotion.AsyncChunk{id: id, chunk: json}, 
-    state: state = %State{:event_id => event_id, :async_id => async_id, :credentials => credentials}, 
-    export: false, when: is_map(json) and id == async_id do
+    state: async_id, export: false, when: is_map(json) and id == async_id do
 
         if (json[:result] == "error"), do:
             Logger.warn json[:msg]
@@ -60,48 +55,36 @@ defmodule MessageClient do
 
             max_event_id = List.foldl(
                 events,
-                event_id,
+                -1,
                 fn e, acc -> max(e[:id], acc) end
             )
-            new_state %{state | :event_id => max_event_id}
+            StateHandler.set_event_id(max_event_id)
+            noreply
         else
-            new_state %State{:credentials => credentials}
+            new_state -1
         end
     end
 
 
     definfo %HTTPotion.AsyncChunk{id: id, chunk: {:error, reason}}, 
-    state: %State{:async_id => async_id}, export: false, when: id == async_id do
+    state: async_id, export: false, when: id == async_id do
 
         Logger.error "#{__MODULE__}: #{inspect reason}"
-        __MODULE__.request_new_messages(self)
+        __MODULE__.request_new_messages
         noreply
     end
 
 
     definfo %HTTPotion.AsyncEnd{id: id},
-    state: state = %State{:event_id => event_id, :async_id => async_id}, export: false, when: id == async_id do
-        QueueClient.update_event_id(:queueClient, event_id)
+    state: async_id, export: false, when: id == async_id do
         try do
-            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages(state)
-            new_state %{state | :async_id => async_id}
+            %HTTPotion.AsyncResponse{id: async_id} = _request_new_messages
+            new_state async_id
         rescue
             e in HTTPotion.HTTPError ->
                 Logger.error "#{__MODULE__}: #{e.message}"
                 noreply
         end
-    end
-
-
-    definfo {_, {:error, {_, {:error, reason}}}} do
-        Logger.error "#{__MODULE__}: #{to_string(reason)}"
-        noreply
-    end
-
-
-    definfo {_, {:error, reason}} do
-        Logger.error "#{__MODULE__}: #{to_string(reason)}"
-        noreply
     end
 
 
@@ -113,8 +96,14 @@ defmodule MessageClient do
 
     # private functions
 
-    defp _request_new_messages(
-        %State{:queue_id => queue_id, :event_id => event_id, :credentials => %ZulipAPICredentials{key: key, email: email}}) do
+    defp _request_new_messages do
+
+        %StateHandler.State{
+            queue_id: queue_id,
+            event_id: event_id,
+            credentials: %ZulipAPICredentials{key: key, email: email}
+        } = StateHandler.get_state
+
 
         HTTPotion.start
         ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
