@@ -1,46 +1,40 @@
 import Logger
 
 defmodule UserClient do
-    use ExActor.GenServer
+    use ExActor.Strict, export: :UserClient
 
 
-    def start_link(credentials = %ZulipAPICredentials{}, opts) do
-        GenServer.start_link(__MODULE__, credentials, opts)
+    definit(credentials = %ZulipAPICredentials{}) do
+        Logger.debug "Starting #{inspect __MODULE__}"
+        initial_state credentials
     end
 
 
     defcall find_users(user), state: %ZulipAPICredentials{key: key, email: email} do
 
-        try do
-            HTTPotion.start
-            ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
+        HTTPotion.start
+        ibrowse = Dict.merge [basic_auth: {email, key}], Application.get_env(:zulex, :ibrowse, [])
 
-            response = UserProcessor.get(
-                "",
-                [], # empty headers
-                [
-                    ibrowse: ibrowse,
-                    timeout: 600_000
-                ]
-            )
+        response = UserProcessor.get(
+            "",
+            [], # empty headers
+            [
+                ibrowse: ibrowse,
+                timeout: 600_000
+            ]
+        )
 
-            %HTTPotion.Response{body: json, status_code: status_code} = response
-            cond do
-                !HTTPotion.Response.success?(response) ->
-                    msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-                    Logger.error(msg)
-                    reply {:error, msg}
-                json[:result] == "error" ->
-                    Logger.error(json[:msg])
-                    reply {:error, json[:msg]}
-                true ->
-                    reply filter_users(json[:members], user)
-            end
-
-        rescue
-            e in HTTPotion.HTTPError ->
-                Logger.error "#{__MODULE__}: #{e.message}"
-                reply {:error, e.message}
+        %HTTPotion.Response{body: json, status_code: status_code} = response
+        cond do
+            !HTTPotion.Response.success?(response) ->
+                msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
+                Logger.error(msg)
+                raise msg
+            json[:result] == "error" ->
+                Logger.error(json[:msg])
+                reply {:error, json[:msg]}
+            true ->
+                reply filter_users(json[:members], user)
         end
     end
 

@@ -1,4 +1,4 @@
-defmodule MessageLoggerPrivateMessageTest do
+defmodule MessageHanderPrivateMessageTest do
     use ExUnit.Case
 
     test "private messages" do
@@ -58,7 +58,7 @@ defmodule MessageLoggerPrivateMessageTest do
             :content => "Funny enough your private message led to another exception :D"
         }
 
-        assert [first, second] == MessageLogger.sort_messages([first, second])
-        {:ok, _} = MessageLogger.handle_event([first, second], "")
+        assert [first, second] == MessageHandler.sort_messages([first, second])
+        {:ok, _} = MessageHandler.handle_event([first, second], "")
     end
 end

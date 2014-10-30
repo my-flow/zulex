@@ -1,11 +1,10 @@
 import Logger
 
-defmodule MessageLogger do
+defmodule MessageHandler do
     use GenEvent
 
     @colors [
         IO.ANSI.blue,
-        IO.ANSI.bright,
         IO.ANSI.cyan,
         IO.ANSI.green,
         IO.ANSI.magenta,
@@ -53,7 +52,8 @@ defmodule MessageLogger do
     defp display_context(m) do
         r = m[:display_recipient]
         case r do
-            [head|[head2|_]]            -> line = "You and #{head2[:full_name]}"
+            [_|[head2|_]]       -> line = "You and #{head2[:full_name]}"
+            [head|_]            -> line = "You and #{head[:full_name]}"
             _ when is_binary(r) -> line = "#{r} » #{m[:subject]}"
         end
         IO.puts("███ #{line}")

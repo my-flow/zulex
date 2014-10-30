@@ -1,10 +1,10 @@
-defmodule MessageLoggerSortingTest do
+defmodule MessageHandlerUnicodeTest do
     use ExUnit.Case
 
-    test "sorting of messages" do
+    test "unicode messages" do
         first = %{
-                :display_recipient => "food",
-                :subject => "lunch",
+                :display_recipient => "test-stream",
+                :subject => "äöü Unicode",
                 :timestamp => 0,
 
                 :sender_id => 0,
@@ -23,8 +23,8 @@ defmodule MessageLoggerSortingTest do
         }
 
         third = %{
-                :display_recipient => "food",
-                :subject => "lunch",
+                :display_recipient => "test-stream",
+                :subject => "äöü Unicode",
                 :timestamp => 2,
 
                 :sender_id => 2,
@@ -32,7 +32,7 @@ defmodule MessageLoggerSortingTest do
                 :content => "I also hunger."
         }
 
-        assert [second, first, third] == MessageLogger.sort_messages([first, second, third])
-        {:ok, _} = MessageLogger.handle_event([second, first, third], "")
+        assert [second, first, third] == MessageHandler.sort_messages([first, second, third])
+        {:ok, _} = MessageHandler.handle_event([first, second, third], "")
     end
 end

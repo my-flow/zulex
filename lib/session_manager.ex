@@ -1,11 +1,12 @@
 import Logger
 
-defmodule SessionHandler do
-    use ExActor.GenServer, export: :sessionHandler
+defmodule SessionManager do
+    use ExActor.Strict, export: :SessionManager
 
 
-    def start_link(opts) do
-        GenServer.start_link(__MODULE__, nil, opts)
+    definit do
+        Logger.debug "Starting #{inspect __MODULE__}"
+        initial_state nil
     end
 
 
