@@ -24,6 +24,11 @@ defmodule ZulEx do
     end
 
 
+    def pause_messages do
+        Reader.stop_connector
+    end
+
+
     def read_subscriptions(name \\ :all)
 
 

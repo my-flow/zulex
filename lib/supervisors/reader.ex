@@ -23,10 +23,12 @@ defmodule Reader do
         if Process.whereis(:Connector) do
             {:ok, Process.whereis(:Connector)}
         else
-            Supervisor.restart_child(
-                :Reader,
-                Reader.Connector
-            )
+            Supervisor.restart_child(:Reader, Reader.Connector)
         end
+    end
+
+
+    def stop_connector do
+        Supervisor.terminate_child(:Reader, Reader.Connector)
     end
 end
