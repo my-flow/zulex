@@ -17,4 +17,16 @@ defmodule Reader do
         ]
         supervise(children, strategy: :rest_for_one)
     end
+
+
+    def restart_connector do
+        if Process.whereis(:Connector) do
+            {:ok, Process.whereis(:Connector)}
+        else
+            Supervisor.restart_child(
+                :Reader,
+                Reader.Connector
+            )
+        end
+    end
 end

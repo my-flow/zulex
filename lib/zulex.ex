@@ -19,6 +19,7 @@ defmodule ZulEx do
                     supervisor(Reader, [credentials], restart: :transient)
                 )
             end
+            Reader.restart_connector
         end
     end
 

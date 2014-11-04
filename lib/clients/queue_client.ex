@@ -1,5 +1,4 @@
 import Logger
-import Supervisor.Spec
 
 defmodule Reader.QueueClient do
     use ExActor.Strict, export: :QueueClient
