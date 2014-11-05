@@ -1,4 +1,4 @@
-defmodule MessageHanderSingletonMessageTest do
+defmodule DisplayHanderSingletonMessageTest do
     use ExUnit.Case
 
     test "private singleton messages" do
@@ -22,7 +22,7 @@ defmodule MessageHanderSingletonMessageTest do
             :content => "Well there's a somewhat better answer"
         }
 
-        assert [first] == MessageHandler.sort_messages([first])
-        {:ok, _} = MessageHandler.handle_event([first], "")
+        assert [first] == DisplayHandler.sort_messages([first], true)
+        {:ok, _} = DisplayHandler.handle_event([first], %{:opts => [resort: true], :context => ""})
     end
 end

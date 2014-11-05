@@ -14,8 +14,12 @@ defmodule Processor.Base do
             end
 
             def process_response_body(body) when is_list(body) do
-                if JSEX.is_json? to_string(body) do
-                    JSEX.decode! to_string(body), [labels: :atom]
+                process_response_body(to_string(body))
+            end
+
+            def process_response_body(body) when is_binary(body) do
+                if JSEX.is_json? body do
+                    JSEX.decode! body, [labels: :atom]
                 else
                     body
                 end

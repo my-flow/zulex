@@ -7,10 +7,24 @@ defmodule Reader.MessageClient do
     definit do
         Logger.info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
-        :ok = GenEvent.add_handler(:EventManager, MessageHandler, "")
+        :ok = GenEvent.add_handler(:EventManager, DisplayHandler, [])
+        case GenEvent.add_handler(:EventManager, ArchiveHandler, []) do
+            {:error, reason} -> Logger.warn("#{__MODULE__}: #{inspect reason}")
+            :ok -> :ok
+        end
         request_new_messages
         initial_state nil
     end
+
+
+    defcall remove_display_handler do
+        reply GenEvent.remove_handler(:EventManager, DisplayHandler, [])
+    end
+
+
+    defcall add_display_handler do
+        reply GenEvent.add_handler(:EventManager, DisplayHandler, [])
+    end        
 
 
     defcast request_new_messages, export: false do

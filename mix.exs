@@ -29,7 +29,8 @@ defmodule Zulex.Mixfile do
       {:exactor, "~> 1.0.0"},
       {:ibrowse,   github: "cmullaparthi/ibrowse",   tag: "v4.1.1"},
       {:httpotion, github: "my-flow/httpotion",      branch: "master"},
-      {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"}
+      {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"},
+      {:timex, "~> 0.13.0"}
     ]
   end
 

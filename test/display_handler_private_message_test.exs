@@ -1,4 +1,4 @@
-defmodule MessageHanderPrivateMessageTest do
+defmodule DisplayHanderPrivateMessageTest do
     use ExUnit.Case
 
     test "private messages" do
@@ -58,7 +58,7 @@ defmodule MessageHanderPrivateMessageTest do
             :content => "Funny enough your private message led to another exception :D"
         }
 
-        assert [first, second] == MessageHandler.sort_messages([first, second])
-        {:ok, _} = MessageHandler.handle_event([first, second], "")
+        assert [first, second] == DisplayHandler.sort_messages([first, second], true)
+        {:ok, _} = DisplayHandler.handle_event([first, second], %{:opts => [resort: true], :context => ""})
     end
 end

@@ -26,4 +26,14 @@ defmodule Reader.Connector do
 
         Supervisor.terminate_child(:Connector, Reader.QueueClient)
     end
+
+
+    def mute_messages do
+        Reader.MessageClient.remove_display_handler
+    end
+
+
+    def unmute_messages do
+        Reader.MessageClient.add_display_handler
+    end
 end

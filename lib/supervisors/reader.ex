@@ -28,7 +28,12 @@ defmodule Reader do
     end
 
 
-    def stop_connector do
-        Supervisor.terminate_child(:Reader, Reader.Connector)
+    def mute_messages do
+        Reader.Connector.mute_messages
+    end
+
+
+    def unmute_messages do
+        Reader.Connector.unmute_messages
     end
 end

@@ -1,4 +1,4 @@
-defmodule MessageHandlerUnicodeTest do
+defmodule DisplayHandlerUnicodeTest do
     use ExUnit.Case
 
     test "unicode messages" do
@@ -32,7 +32,7 @@ defmodule MessageHandlerUnicodeTest do
                 :content => "I also hunger."
         }
 
-        assert [second, first, third] == MessageHandler.sort_messages([first, second, third])
-        {:ok, _} = MessageHandler.handle_event([first, second, third], "")
+        assert [second, first, third] == DisplayHandler.sort_messages([first, second, third], true)
+        {:ok, _} = DisplayHandler.handle_event([first, second, third], %{:opts => [resort: true], :context => ""})
     end
 end

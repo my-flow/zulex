@@ -13,18 +13,20 @@ A reactive [Zulip](https://zulip.com) reader in Elixir/Erlang with real-time upd
 3. Start Elixir's interactive shell with `ZULIP_USERNAME=john.doe@example.com ZULIP_API_KEY=abc123 iex -S mix`. You will see incoming messages in real-time.
 
 
-### Pause incoming messages
-You can mute messages temporarily with
+### Mute incoming messages
+You can mute all messages temporarily with
 
 ```
-iex(1)> ZulEx.pause_messages
+iex(1)> ZulEx.mute_messages
 ```
 
-and switch them on again with
+and switch them back on again with
 
 ```
-iex(2)> ZulEx.read_messages
+iex(2)> ZulEx.unmute_messages
 ```
+
+You can also `ZulEx.replay_messages` to see if you missed anything.
 
 
 ## Proxy Settings

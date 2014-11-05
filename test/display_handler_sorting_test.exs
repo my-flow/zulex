@@ -1,4 +1,4 @@
-defmodule MessageHandlerSortingTest do
+defmodule DisplayHandlerSortingTest do
     use ExUnit.Case
 
     test "sorting of messages" do
@@ -32,7 +32,7 @@ defmodule MessageHandlerSortingTest do
                 :content => "I also hunger."
         }
 
-        assert [second, first, third] == MessageHandler.sort_messages([first, second, third])
-        {:ok, _} = MessageHandler.handle_event([second, first, third], "")
+        assert [second, first, third] == DisplayHandler.sort_messages([first, second, third], true)
+        {:ok, _} = DisplayHandler.handle_event([second, first, third], %{:opts => [resort: true], :context => ""})
     end
 end

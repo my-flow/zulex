@@ -4,6 +4,7 @@ import Supervisor.Spec
 defmodule ZulEx do
     use Application
 
+
     def start(_type, _args) do
         %{} = Task.async(fn -> read_messages(:ignore) end)
         Supervisor.start_link([], [strategy: :one_for_one, name: ZulEx.Supervisor])
@@ -25,8 +26,25 @@ defmodule ZulEx do
     end
 
 
-    def pause_messages do
-        Reader.stop_connector
+    def mute_messages do
+        Reader.mute_messages
+    end
+
+
+    def unmute_messages do
+        Reader.unmute_messages
+    end
+
+
+    def replay_messages(options \\ []) do
+        case Process.whereis(:ReplayClient) do
+            nil -> Supervisor.start_child(
+                        ZulEx.Supervisor,
+                        worker(ReplayClient, [options], restart: :temporary)
+                   )
+            _ -> Logger.debug "#{__MODULE__}: ReplayClient is already registered."
+        end
+        ReplayClient.replay_messages(options)
     end
 
 

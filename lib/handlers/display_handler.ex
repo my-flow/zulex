@@ -1,6 +1,6 @@
 import Logger
 
-defmodule MessageHandler do
+defmodule DisplayHandler do
     use GenEvent
 
     @colors [
@@ -13,9 +13,15 @@ defmodule MessageHandler do
     ]
 
 
-    def handle_event(new_messages, context) when is_list(new_messages) do
+    def init(options \\ []) do
+        opts = Dict.merge [resort: true], options
+        {:ok, %{:opts => opts, :context => ""}}
+    end
+
+
+    def handle_event(new_messages, state = %{:opts => opts, :context => context}) when is_list(new_messages) do
         {_, new_context} = Enum.map_reduce(
-            sort_messages(new_messages),
+            sort_messages(new_messages, opts[:resort]),
             context,
             fn m, acc ->
                 c = build_context(m)
@@ -24,12 +30,15 @@ defmodule MessageHandler do
                 {m, c}
             end
         )
-        {:ok, new_context}
+        {:ok, %{state | :context => new_context}}
     end
 
 
-    @spec sort_messages([map, ...]) :: [map, ...]
-    def sort_messages(messages) when is_list(messages) do
+    @spec sort_messages([map, ...], boolean) :: [map, ...]
+    def sort_messages(messages, resort)
+
+
+    def sort_messages(messages, true) when is_list(messages) do
         groups = Enum.into(
             Enum.map(
                 Enum.group_by(messages, &build_context/1),
@@ -45,6 +54,11 @@ defmodule MessageHandler do
                 && &1[:timestamp] <= &2[:timestamp]
             )
         )
+    end
+
+
+    def sort_messages(messages, false) when is_list(messages) do
+        messages
     end
 
 

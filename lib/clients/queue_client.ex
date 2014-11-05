@@ -12,7 +12,6 @@ defmodule Reader.QueueClient do
 
 
     defcast register_queue, export: false do
-
         %ZulipAPICredentials{key: key, email: email} = StateManager.get_credentials
 
         HTTPotion.start
