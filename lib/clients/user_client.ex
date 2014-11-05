@@ -5,7 +5,7 @@ defmodule UserClient do
 
 
     definit(credentials = %ZulipAPICredentials{}) do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         initial_state credentials
     end
 

@@ -5,11 +5,12 @@ defmodule SessionManager do
 
 
     definit do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         initial_state nil
     end
 
 
+    @spec authenticate(atom) :: term
     def authenticate(handle_undefined \\ :ignore) do
         result = __MODULE__.authenticate_user
         case result do

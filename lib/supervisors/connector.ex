@@ -10,7 +10,7 @@ defmodule Reader.Connector do
 
 
     def init(_) do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         children = [
             worker(Reader.QueueClient, [], restart: :transient)
         ]
@@ -23,7 +23,7 @@ defmodule Reader.Connector do
             :Connector,
             worker(Reader.MessageClient, [], restart: :transient)
         )
-        :ok = Supervisor.terminate_child(:Connector, Reader.QueueClient)
-        :ok = Supervisor.delete_child(:Connector, Reader.QueueClient)
+
+        Supervisor.terminate_child(:Connector, Reader.QueueClient)
     end
 end

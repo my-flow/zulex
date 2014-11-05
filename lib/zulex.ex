@@ -33,25 +33,28 @@ defmodule ZulEx do
     def read_subscriptions(name \\ :all)
 
 
+    @spec read_subscriptions(binary | atom) :: [binary]
     def read_subscriptions(name) when is_binary(name) or is_atom(:all) do
         _read_subscriptions(name)
     end
 
 
+    @spec read_subscriptions(%Regex{}) :: [binary]
     def read_subscriptions(regex = %Regex{}) do
         _read_subscriptions(regex)
     end
 
 
+    @spec read_users :: [map]
     def read_users do
         _read_users(:all)
     end
 
 
+    @spec whois(binary | atom) :: [map]
     def whois(user) when is_binary(user) or is_atom(user) do
         _read_users(user)
     end
-
 
     def whois(regex = %Regex{}) do
         _read_users(regex)
@@ -60,6 +63,7 @@ defmodule ZulEx do
 
     # private functions
 
+    @spec _read_subscriptions(term) :: [binary]
     defp _read_subscriptions(name) do
         credentials = authenticate(:ask)
         case Process.whereis(:SubscriptionClient) do
@@ -73,6 +77,7 @@ defmodule ZulEx do
     end
 
 
+    @spec _read_users(term) :: [map]
     defp _read_users(user) do
         credentials = authenticate(:ask)
         case Process.whereis(:UserClient) do
@@ -86,6 +91,7 @@ defmodule ZulEx do
     end
 
 
+    @spec authenticate(atom) :: term
     defp authenticate(handle_undefined) do
         case Process.whereis(:SessionManager) do
             nil -> Supervisor.start_child(

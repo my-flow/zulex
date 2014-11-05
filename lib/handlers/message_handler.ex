@@ -28,6 +28,7 @@ defmodule MessageHandler do
     end
 
 
+    @spec sort_messages([map, ...]) :: [map, ...]
     def sort_messages(messages) when is_list(messages) do
         groups = Enum.into(
             Enum.map(

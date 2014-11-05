@@ -10,7 +10,7 @@ defmodule Reader do
 
 
     def init(credentials = %ZulipAPICredentials{}) do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         children = [
             worker(StateManager, [credentials], restart: :transient),
             supervisor(Reader.Connector, [], restart: :transient)

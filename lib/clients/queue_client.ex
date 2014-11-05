@@ -5,7 +5,7 @@ defmodule Reader.QueueClient do
 
 
     definit do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         register_queue
         initial_state nil
     end
@@ -54,7 +54,7 @@ defmodule Reader.QueueClient do
             Logger.error json[:msg]
 
         StateManager.set_queue_id_and_event_id(json[:queue_id], json[:last_event_id])
-        Reader.Connector.read_messages
+        :ok = Reader.Connector.read_messages
 
         noreply
     end

@@ -5,7 +5,7 @@ defmodule Reader.MessageClient do
 
 
     definit do
-        Logger.debug "Starting #{inspect __MODULE__}"
+        Logger.info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
         :ok = GenEvent.add_handler(:EventManager, MessageHandler, "")
         request_new_messages
