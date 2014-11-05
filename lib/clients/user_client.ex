@@ -29,7 +29,7 @@ defmodule UserClient do
             !HTTPotion.Response.success?(response) ->
                 msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
                 Logger.error(msg)
-                raise msg
+                raise RuntimeError, message: msg
             json[:result] == "error" ->
                 Logger.error(json[:msg])
                 reply {:error, json[:msg]}

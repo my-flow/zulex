@@ -6,8 +6,8 @@ defmodule Reader.MessageClient do
 
     definit do
         Logger.debug "Starting #{inspect __MODULE__}"
-        GenEvent.start_link(name: :EventManager)
-        GenEvent.add_handler(:EventManager, MessageHandler, "")
+        {:ok, _} = GenEvent.start_link(name: :EventManager)
+        :ok = GenEvent.add_handler(:EventManager, MessageHandler, "")
         request_new_messages
         initial_state nil
     end
@@ -46,7 +46,7 @@ defmodule Reader.MessageClient do
         unless status_code in 200..299 or status_code in [302, 304] do
             msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
             Logger.error(msg)
-            raise msg
+            raise RuntimeError, message: msg
         end
         noreply
     end

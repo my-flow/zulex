@@ -5,7 +5,7 @@ defmodule ZulEx do
     use Application
 
     def start(_type, _args) do
-        Task.async(fn -> read_messages(:ignore) end)
+        %{} = Task.async(fn -> read_messages(:ignore) end)
         Supervisor.start_link([], [strategy: :one_for_one, name: ZulEx.Supervisor])
     end
 
@@ -13,11 +13,12 @@ defmodule ZulEx do
     def read_messages(handle_undefined \\ :ask) do
         credentials = authenticate(handle_undefined)
         if credentials do
-            unless Process.whereis(:Reader) do
-                Supervisor.start_child(
+            case Process.whereis(:Reader) do
+                nil -> Supervisor.start_child(
                     ZulEx.Supervisor,
                     supervisor(Reader, [credentials], restart: :transient)
                 )
+                _ -> Logger.debug "#{__MODULE__}: Reader is already registered."
             end
             Reader.restart_connector
         end
@@ -61,11 +62,12 @@ defmodule ZulEx do
 
     defp _read_subscriptions(name) do
         credentials = authenticate(:ask)
-        unless Process.whereis(:SubscriptionClient) do
-            Supervisor.start_child(
-                ZulEx.Supervisor,
-                worker(SubscriptionClient, [credentials], restart: :temporary)
-            )
+        case Process.whereis(:SubscriptionClient) do
+            nil -> Supervisor.start_child(
+                        ZulEx.Supervisor,
+                        worker(SubscriptionClient, [credentials], restart: :temporary)
+                   )
+            _ -> Logger.debug "#{__MODULE__}: SubscriptionClient is already registered."
         end
         SubscriptionClient.read_subscriptions(name)
     end
@@ -73,22 +75,24 @@ defmodule ZulEx do
 
     defp _read_users(user) do
         credentials = authenticate(:ask)
-        unless Process.whereis(:UserClient) do
-            Supervisor.start_child(
-                ZulEx.Supervisor,
-                worker(UserClient, [credentials], restart: :temporary)
-            )
+        case Process.whereis(:UserClient) do
+            nil -> Supervisor.start_child(
+                        ZulEx.Supervisor,
+                        worker(UserClient, [credentials], restart: :temporary)
+                   )
+            _ -> Logger.debug "#{__MODULE__}: UserClient is already registered."
         end
         UserClient.find_users(user)
     end
 
 
     defp authenticate(handle_undefined) do
-        unless Process.whereis(:SessionManager) do
-            Supervisor.start_child(
-                ZulEx.Supervisor,
-                worker(SessionManager, [], restart: :transient)
-            )
+        case Process.whereis(:SessionManager) do
+            nil -> Supervisor.start_child(
+                        ZulEx.Supervisor,
+                        worker(SessionManager, [], restart: :transient)
+                   )
+            _ -> Logger.debug "#{__MODULE__}: SessionManager is already registered."
         end
         credentials = SessionManager.authenticate(handle_undefined)
         SessionManager.update_credentials(credentials)

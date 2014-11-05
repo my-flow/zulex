@@ -41,7 +41,7 @@ defmodule Reader.QueueClient do
         unless status_code in 200..299 or status_code in [302, 304] do
             msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
             Logger.error(msg)
-            raise msg
+            raise RuntimeError, message: msg
         end
         noreply
     end
