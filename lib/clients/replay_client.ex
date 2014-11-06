@@ -14,13 +14,10 @@ defmodule ReplayClient do
 
     defcall replay_messages(options), export: false do
         opts = Dict.merge [count: 1_000_000, order: :grouped], options
-        {:ok, io_device} = File.open(ArchiveHelper.get_link_to_latest_log_file, [:read, :utf8])
+        stream = File.stream!(ArchiveHelper.get_link_to_latest_log_file, [:read, :utf8])
 
         messages = Enum.map(
-            Enum.reverse(Enum.take(
-                Enum.reverse(IO.stream(io_device, :line)),
-                opts[:count]
-            )),
+            Enum.reverse(Stream.take(Enum.reverse(stream), opts[:count])),
             &MessageProcessor.process_response_body(&1)
         )
 

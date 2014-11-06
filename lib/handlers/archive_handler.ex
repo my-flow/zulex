@@ -1,11 +1,11 @@
-import Logger
+ import Logger
 
 defmodule ArchiveHandler do
     use GenEvent
 
 
     def init(_) do
-        stream = File.stream!(create_latest_log_file, [:append, {:encoding, :utf8}])
+        stream = File.stream!(create_latest_log_file!, [:append, {:encoding, :utf8}])
         Collectable.into(stream)
     end
 
@@ -21,8 +21,8 @@ defmodule ArchiveHandler do
     end
 
 
-    @spec create_latest_log_file :: binary
-    defp create_latest_log_file do
+    @spec create_latest_log_file! :: binary
+    defp create_latest_log_file! do
         filename = ArchiveHelper.get_log_file_name
         dirname  = ArchiveHelper.get_log_path
         linkname = ArchiveHelper.get_link_to_latest_log_file
@@ -30,7 +30,7 @@ defmodule ArchiveHandler do
         File.mkdir_p!(dirname)
         File.touch!(filename)
 
-        case File.rm!(linkname) do
+        case File.rm(linkname) do
             {:error, reason} ->
                 Logger.debug("#{__MODULE__}: Removing symbolic link failed with reason #{inspect reason}")
             :ok ->
