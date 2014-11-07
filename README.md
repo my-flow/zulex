@@ -26,7 +26,38 @@ and switch them back on again with
 iex(2)> ZulEx.unmute_messages
 ```
 
-You can also `ZulEx.replay_messages` to see if you missed anything.
+
+### Replay incoming messages
+
+You can replay chat messages even if you muted them before:
+
+```
+iex(3)> ZulEx.replay_messages
+```
+
+Limit the number of replayed messages:
+
+```
+iex(4)> ZulEx.replay_messages count: 10
+```
+
+Reread your messages with a filter:
+
+```
+iex(5)> ZulEx.replay_messages filter: [display_recipient: "food", subject: "lunch"]
+```
+
+Order your messages by stream and by subject (as opposed to by time):
+
+```
+iex(6)> ZulEx.replay_messages resort: true
+```
+
+Combine all the options above:
+
+```
+iex(7)> ZulEx.replay_messages filter: [display_recipient: "food"], count: 20, resort: true
+```
 
 
 ## Proxy Settings
