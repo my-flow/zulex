@@ -19,9 +19,14 @@ defmodule DisplayHandler do
     end
 
 
-    def handle_event(new_messages, state = %{:opts => opts, :context => context}) when is_list(new_messages) do
+    @spec handle_event(Enumerable.t, %{}) :: {:ok, map }
+    def handle_event(new_messages, state = %{:opts => opts, :context => context}) do
+
         {_, new_context} = Enum.map_reduce(
-            sort_messages(new_messages, opts[:resort]),
+            sort_messages(
+                Enum.uniq(new_messages, &(&1[:id])),
+                opts[:resort]
+            ),
             context,
             fn m, acc ->
                 c = build_context(m)

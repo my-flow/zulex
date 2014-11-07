@@ -24,6 +24,7 @@ defmodule DisplayHanderPrivateMessageTest do
             ], 
             :subject => "", 
             :timestamp => 0, 
+            :id => 0,
 
             :sender_id => 0,
             :sender_short_name => "sender0", 
@@ -52,6 +53,7 @@ defmodule DisplayHanderPrivateMessageTest do
             ], 
             :subject => "",
             :timestamp => 1, 
+            :id => 1,
 
             :sender_id => 1,
             :sender_short_name => "sender1",

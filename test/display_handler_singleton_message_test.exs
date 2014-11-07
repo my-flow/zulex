@@ -16,6 +16,7 @@ defmodule DisplayHanderSingletonMessageTest do
             ], 
             :subject => "", 
             :timestamp => 0, 
+            :id => 0,
 
             :sender_id => 0,
             :sender_short_name => "sender0", 

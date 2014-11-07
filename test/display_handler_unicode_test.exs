@@ -6,6 +6,7 @@ defmodule DisplayHandlerUnicodeTest do
                 :display_recipient => "test-stream",
                 :subject => "äöü Unicode",
                 :timestamp => 0,
+                :id => 0,
 
                 :sender_id => 0,
                 :sender_short_name => "sender0",
@@ -16,6 +17,7 @@ defmodule DisplayHandlerUnicodeTest do
                 :display_recipient => "455 Broadway",
                 :subject => "Monads!",
                 :timestamp => 1,
+                :id => 1,
 
                 :sender_id => 1,
                 :sender_short_name => "sender1",
@@ -26,6 +28,7 @@ defmodule DisplayHandlerUnicodeTest do
                 :display_recipient => "test-stream",
                 :subject => "äöü Unicode",
                 :timestamp => 2,
+                :id => 2,
 
                 :sender_id => 2,
                 :sender_short_name => "sender2",
