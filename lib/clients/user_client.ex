@@ -4,7 +4,7 @@ defmodule UserClient do
     use ExActor.Strict, export: :UserClient
 
 
-    definit(credentials = %ZulipAPICredentials{}) do
+    defstart start_link(credentials = %ZulipAPICredentials{}) do
         Logger.info "Starting #{inspect __MODULE__}"
         initial_state credentials
     end

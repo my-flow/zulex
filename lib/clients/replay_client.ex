@@ -4,7 +4,7 @@ defmodule ReplayClient do
     use ExActor.Strict, export: :ReplayClient
 
 
-    definit do
+    defstart start_link do
         Logger.info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :ReplayManager)
         initial_state nil

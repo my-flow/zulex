@@ -4,7 +4,7 @@ defmodule Reader.MessageClient do
     use ExActor.Tolerant, export: :MessageClient
 
 
-    definit do
+    defstart start_link do
         Logger.info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
         :ok = GenEvent.add_handler(:EventManager, DisplayHandler, [])
@@ -54,7 +54,7 @@ defmodule Reader.MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncHeaders{id: id, status_code: status_code}, 
+    defhandleinfo %HTTPotion.AsyncHeaders{id: id, status_code: status_code},
     state: async_id, export: false, when: id == async_id do
 
         unless status_code in 200..299 or status_code in [302, 304] do
@@ -66,7 +66,7 @@ defmodule Reader.MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncChunk{id: id, chunk: json}, 
+    defhandleinfo %HTTPotion.AsyncChunk{id: id, chunk: json},
     state: async_id, export: false, when: is_map(json) and id == async_id do
 
         if (json[:result] == "error"), do:
@@ -88,7 +88,7 @@ defmodule Reader.MessageClient do
     end
 
 
-    definfo %HTTPotion.AsyncEnd{id: id},
+    defhandleinfo %HTTPotion.AsyncEnd{id: id},
     state: async_id, export: false, when: id == async_id do
         __MODULE__.request_new_messages
         noreply

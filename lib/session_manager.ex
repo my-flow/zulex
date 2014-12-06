@@ -4,7 +4,7 @@ defmodule SessionManager do
     use ExActor.Strict, export: :SessionManager
 
 
-    definit do
+    defstart start_link do
         Logger.info "Starting #{inspect __MODULE__}"
         initial_state nil
     end

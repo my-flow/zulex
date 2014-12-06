@@ -9,7 +9,7 @@ defmodule StateManager do
     end
 
 
-    def init(credentials = %ZulipAPICredentials{}) do
+    defstart start_link(credentials = %ZulipAPICredentials{}) do
         Logger.info "Starting #{inspect __MODULE__}"
         initial_state %State{:credentials => credentials}
     end
