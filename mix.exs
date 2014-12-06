@@ -30,6 +30,7 @@ defmodule Zulex.Mixfile do
       {:ibrowse,   github: "cmullaparthi/ibrowse",   tag: "v4.1.1"},
       {:httpotion, github: "my-flow/httpotion",      branch: "master"},
       {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"},
+      {:jsx,       github: "talentdeficit/jsx",      tag: "v2.1.1", override: true},
       {:timex, "~> 0.13.0"}
     ]
   end
