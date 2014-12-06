@@ -1,11 +1,11 @@
-import Logger
-
 defmodule SubscriptionClient do
     use ExActor.Strict, export: :SubscriptionClient
 
+    import Logger
+
 
     defstart start_link(credentials = %ZulipAPICredentials{}) do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         initial_state credentials
     end
 
@@ -27,10 +27,10 @@ defmodule SubscriptionClient do
         cond do
             !HTTPotion.Response.success?(response) ->
                 msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-                Logger.error(msg)
+                error(msg)
                 raise RuntimeError, message: msg
             json[:result] == "error" ->
-                Logger.error(json[:msg])
+                error(json[:msg])
                 reply {:error, json[:msg]}
             true ->
                 reply filter_subscriptions(json[:subscriptions], name)

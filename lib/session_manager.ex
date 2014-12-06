@@ -1,11 +1,11 @@
-import Logger
-
 defmodule SessionManager do
     use ExActor.Strict, export: :SessionManager
 
+    import Logger
+
 
     defstart start_link do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         initial_state nil
     end
 

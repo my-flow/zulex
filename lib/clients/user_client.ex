@@ -1,11 +1,11 @@
-import Logger
-
 defmodule UserClient do
     use ExActor.Strict, export: :UserClient
 
+    import Logger
+
 
     defstart start_link(credentials = %ZulipAPICredentials{}) do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         initial_state credentials
     end
 
@@ -28,10 +28,10 @@ defmodule UserClient do
         cond do
             !HTTPotion.Response.success?(response) ->
                 msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-                Logger.error(msg)
+                error(msg)
                 raise RuntimeError, message: msg
             json[:result] == "error" ->
-                Logger.error(json[:msg])
+                error(json[:msg])
                 reply {:error, json[:msg]}
             true ->
                 reply filter_users(json[:members], user)

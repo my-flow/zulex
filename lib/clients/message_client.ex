@@ -1,15 +1,15 @@
-import Logger
-
 defmodule Reader.MessageClient do
     use ExActor.Tolerant, export: :MessageClient
 
+    import Logger
+
 
     defstart start_link do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
         :ok = GenEvent.add_handler(:EventManager, DisplayHandler, [])
         case GenEvent.add_handler(:EventManager, ArchiveHandler, []) do
-            {:error, reason} -> Logger.warn("#{__MODULE__}: #{inspect reason}")
+            {:error, reason} -> warn("#{__MODULE__}: #{inspect reason}")
             :ok -> :ok
         end
         request_new_messages
@@ -59,7 +59,7 @@ defmodule Reader.MessageClient do
 
         unless status_code in 200..299 or status_code in [302, 304] do
             msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-            Logger.error(msg)
+            error(msg)
             raise RuntimeError, message: msg
         end
         noreply
@@ -70,7 +70,7 @@ defmodule Reader.MessageClient do
     state: async_id, export: false, when: is_map(json) and id == async_id do
 
         if (json[:result] == "error"), do:
-            Logger.warn json[:msg]
+            warn json[:msg]
 
         events = Dict.get(json, :events)
 

@@ -1,7 +1,7 @@
-import Logger
-
 defmodule Reader.Connector do
     use Supervisor
+
+    import Logger
 
 
     def start_link do
@@ -10,7 +10,7 @@ defmodule Reader.Connector do
 
 
     def init(_) do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         children = [
             worker(Reader.QueueClient, [], restart: :transient)
         ]

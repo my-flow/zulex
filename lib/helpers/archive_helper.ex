@@ -1,8 +1,5 @@
-import Logger
-
 defmodule ArchiveHelper do
     use Timex
-
 
     @log_path [
         System.user_home!,

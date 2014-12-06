@@ -1,7 +1,7 @@
-import Logger
-
 defmodule StateManager do
     use ExActor.GenServer, export: :StateManager
+
+    import Logger
 
 
     defmodule State do
@@ -10,7 +10,7 @@ defmodule StateManager do
 
 
     defstart start_link(credentials = %ZulipAPICredentials{}) do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         initial_state %State{:credentials => credentials}
     end
 

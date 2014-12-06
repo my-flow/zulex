@@ -1,8 +1,8 @@
-import Logger
-import Supervisor.Spec
 
 defmodule ZulEx do
     use Application
+    import Supervisor.Spec
+    import Logger
 
 
     def start(_type, _args) do
@@ -19,7 +19,7 @@ defmodule ZulEx do
                     ZulEx.Supervisor,
                     supervisor(Reader, [credentials], restart: :transient)
                 )
-                _ -> Logger.debug "#{__MODULE__}: Reader is already registered."
+                _ -> debug "#{__MODULE__}: Reader is already registered."
             end
             Reader.restart_connector
         end
@@ -42,7 +42,7 @@ defmodule ZulEx do
                         ZulEx.Supervisor,
                         worker(ReplayClient, [options], restart: :temporary)
                    )
-            _ -> Logger.debug "#{__MODULE__}: ReplayClient is already registered."
+            _ -> debug "#{__MODULE__}: ReplayClient is already registered."
         end
         ReplayClient.replay_messages(options)
     end
@@ -89,7 +89,7 @@ defmodule ZulEx do
                         ZulEx.Supervisor,
                         worker(SubscriptionClient, [credentials], restart: :temporary)
                    )
-            _ -> Logger.debug "#{__MODULE__}: SubscriptionClient is already registered."
+            _ -> debug "#{__MODULE__}: SubscriptionClient is already registered."
         end
         SubscriptionClient.read_subscriptions(name)
     end
@@ -103,7 +103,7 @@ defmodule ZulEx do
                         ZulEx.Supervisor,
                         worker(UserClient, [credentials], restart: :temporary)
                    )
-            _ -> Logger.debug "#{__MODULE__}: UserClient is already registered."
+            _ -> debug "#{__MODULE__}: UserClient is already registered."
         end
         UserClient.find_users(user)
     end
@@ -116,7 +116,7 @@ defmodule ZulEx do
                         ZulEx.Supervisor,
                         worker(SessionManager, [], restart: :transient)
                    )
-            _ -> Logger.debug "#{__MODULE__}: SessionManager is already registered."
+            _ -> debug "#{__MODULE__}: SessionManager is already registered."
         end
         credentials = SessionManager.authenticate(handle_undefined)
         SessionManager.update_credentials(credentials)

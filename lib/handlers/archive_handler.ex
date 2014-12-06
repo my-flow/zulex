@@ -1,7 +1,7 @@
- import Logger
-
 defmodule ArchiveHandler do
     use GenEvent
+
+    import Logger
 
 
     def init(_) do
@@ -16,7 +16,7 @@ defmodule ArchiveHandler do
     end
 
 
-    def terminate(reason, fun) do
+    def terminate(_, fun) do
         fun.(:ok, :done)
     end
 
@@ -32,14 +32,14 @@ defmodule ArchiveHandler do
 
         case File.rm(linkname) do
             {:error, reason} ->
-                Logger.debug("#{__MODULE__}: Removing symbolic link failed with reason #{inspect reason}")
+                debug("#{__MODULE__}: Removing symbolic link failed with reason #{inspect reason}")
             :ok ->
                 :ok
         end
 
         case File.ln_s(Path.basename(filename), linkname) do
             {:error, reason} ->
-                Logger.debug("#{__MODULE__}: Creating symbolic link failed with reason #{inspect reason}")
+                debug("#{__MODULE__}: Creating symbolic link failed with reason #{inspect reason}")
             :ok ->
                 :ok
         end

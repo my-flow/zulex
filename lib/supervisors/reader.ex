@@ -1,7 +1,7 @@
-import Logger
-
 defmodule Reader do
     use Supervisor
+
+    import Logger
 
 
     def start_link(credentials = %ZulipAPICredentials{}) do
@@ -10,7 +10,7 @@ defmodule Reader do
 
 
     def init(credentials = %ZulipAPICredentials{}) do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         children = [
             worker(StateManager, [credentials], restart: :transient),
             supervisor(Reader.Connector, [], restart: :transient)

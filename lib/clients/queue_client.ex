@@ -1,11 +1,11 @@
-import Logger
-
 defmodule Reader.QueueClient do
     use ExActor.Strict, export: :QueueClient
 
+    import Logger
+
 
     defstart start_link do
-        Logger.info "Starting #{inspect __MODULE__}"
+        info "Starting #{inspect __MODULE__}"
         register_queue
         initial_state nil
     end
@@ -39,7 +39,7 @@ defmodule Reader.QueueClient do
 
         unless status_code in 200..299 or status_code in [302, 304] do
             msg = "#{__MODULE__}: Request failed with HTTP status code #{status_code}."
-            Logger.error(msg)
+            error(msg)
             raise RuntimeError, message: msg
         end
         noreply
@@ -50,7 +50,7 @@ defmodule Reader.QueueClient do
     state: async_id, export: false, when: is_map(json) and id == async_id do
 
         if (json[:result] == "error"), do:
-            Logger.error json[:msg]
+            error json[:msg]
 
         StateManager.set_queue_id_and_event_id(json[:queue_id], json[:last_event_id])
         :ok = Reader.Connector.read_messages

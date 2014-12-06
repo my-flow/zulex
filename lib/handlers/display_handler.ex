@@ -1,5 +1,3 @@
-import Logger
-
 defmodule DisplayHandler do
     use GenEvent
 
