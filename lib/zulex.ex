@@ -40,7 +40,7 @@ defmodule ZulEx do
         case Process.whereis(:ReplayClient) do
             nil -> Supervisor.start_child(
                         ZulEx.Supervisor,
-                        worker(ReplayClient, [options], restart: :temporary)
+                        worker(ReplayClient, [], restart: :temporary)
                    )
             _ -> debug "#{__MODULE__}: ReplayClient is already registered."
         end
