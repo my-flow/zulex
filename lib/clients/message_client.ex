@@ -8,7 +8,7 @@ defmodule Reader.MessageClient do
         info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
         :ok = GenEvent.add_handler(:EventManager, DisplayHandler, [])
-        case GenEvent.add_handler(:EventManager, ArchiveHandler, []) do
+        case GenEvent.add_handler(:EventManager, ArchiveHandler, [StateManager.get_credentials.email]) do
             {:error, reason} -> warn("#{__MODULE__}: #{inspect reason}")
             :ok -> :ok
         end

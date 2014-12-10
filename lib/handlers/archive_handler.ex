@@ -4,8 +4,8 @@ defmodule ArchiveHandler do
     import Logger
 
 
-    def init(_) do
-        stream = File.stream!(create_latest_log_file!, [:append, {:encoding, :utf8}])
+    def init(username) do
+        stream = File.stream!(create_latest_log_file!(username), [:append, {:encoding, :utf8}])
         Collectable.into(stream)
     end
 
@@ -21,11 +21,11 @@ defmodule ArchiveHandler do
     end
 
 
-    @spec create_latest_log_file! :: binary
-    defp create_latest_log_file! do
-        filename = ArchiveHelper.get_log_file_name
-        dirname  = ArchiveHelper.get_log_path
-        linkname = ArchiveHelper.get_link_to_latest_log_file
+    @spec create_latest_log_file!(binary) :: binary
+    defp create_latest_log_file!(username) do
+        filename = ArchiveHelper.get_log_file_name(username)
+        dirname  = ArchiveHelper.get_expanded_log_path(username)
+        linkname = ArchiveHelper.get_link_to_latest_log_file(username)
 
         File.mkdir_p!(dirname)
         File.touch!(filename)

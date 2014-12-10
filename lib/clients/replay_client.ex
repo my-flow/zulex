@@ -14,7 +14,8 @@ defmodule ReplayClient do
     defcall replay_messages(options), export: false do
         opts = Dict.merge [count: 1_000_000, resort: false, filter: []], options
 
-        stream = Stream.concat(Enum.map(ArchiveHelper.get_all_log_files!, &(File.stream!(&1, [:read, :utf8]))))
+        log_files = ArchiveHelper.get_all_log_files!(StateManager.get_credentials.email)
+        stream = Stream.concat(Enum.map(log_files, &(File.stream!(&1, [:read, :utf8]))))
         messages =
             Enum.reverse(
                 Stream.take(
