@@ -8,4 +8,6 @@ before_script:
     - export PATH=`pwd`/elixir/bin:$PATH
     - mix local.hex --force
     - mix deps.get
+services:
+    - redis-server
 script: "MIX_ENV=test mix do deps.get, test"
