@@ -6,6 +6,11 @@ config :logger, :console,
     metadata: [:user_id]
 
 
+# Sample configuration with Redis server:
+#
+# config :zulex, :redis_connection_string, "redis://127.0.0.1:6379"
+
+
 # Sample configuration with authorization:
 #
 # config :zulex, :ibrowse,

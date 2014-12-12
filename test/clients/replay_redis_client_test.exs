@@ -4,6 +4,15 @@ defmodule ReplayRedisClientTest do
   @redis_connection_string "redis://127.0.0.1:6379"
 
 
+  setup do
+    Application.put_env(:zulex, :redis_connection_string, "redis://127.0.0.1:6379")
+    case StateManager.start_link(%ZulipAPICredentials{:key => "key", :email => "email"}) do
+      {:ok, pid} -> on_exit fn -> Process.exit(pid, :shutdown) end
+      _          -> on_exit fn -> end
+    end
+  end
+
+
   test "start" do
     {:ok, pid} = ReplayRedisClient.start_link(@redis_connection_string)
     assert Process.alive?(pid)
@@ -38,7 +47,7 @@ defmodule ReplayRedisClientTest do
 
 
   test "replay messages and count and resort" do
-    {:ok, pid} = ReplayFileClient.start_link
+    {:ok, pid} = ReplayRedisClient.start_link(@redis_connection_string)
     assert :ok == GenServer.call(
       pid,
       {
