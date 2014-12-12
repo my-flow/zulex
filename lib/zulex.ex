@@ -38,13 +38,17 @@ defmodule ZulEx do
 
     def replay_messages(options \\ []) do
         case Process.whereis(:ReplayClient) do
-            nil -> Supervisor.start_child(
-                        ZulEx.Supervisor,
-                        worker(ReplayClient, [], restart: :temporary)
-                   )
+            nil ->
+                redis_connection_string = Application.get_env(:zulex, :redis_connection_string)
+                worker = case redis_connection_string do
+                    nil -> worker(ReplayFileClient,  [], restart: :temporary)
+                    _   -> worker(ReplayRedisClient, [redis_connection_string], restart: :temporary)
+                end
+
+                Supervisor.start_child(ZulEx.Supervisor, worker)
             _ -> debug "#{__MODULE__}: ReplayClient is already registered."
         end
-        ReplayClient.replay_messages(options)
+        GenServer.call(:ReplayClient, {:replay_messages, options})
     end
 
 

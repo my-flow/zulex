@@ -31,7 +31,8 @@ defmodule Zulex.Mixfile do
       {:httpotion, github: "my-flow/httpotion",      branch: "master"},
       {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"},
       {:jsx,       github: "talentdeficit/jsx",      tag: "v2.1.1", override: true},
-      {:timex, "~> 0.13.0"}
+      {:timex, "~> 0.13.0"},
+      {:exredis,   github: "artemeff/exredis", tag: "0.1.0"}
     ]
   end
 

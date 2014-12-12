@@ -61,6 +61,12 @@ Combine all the options above:
 iex(7)> ZulEx.replay_messages filter: [display_recipient: "food"], count: 20, resort: true
 ```
 
+## Redis Settings
+If you want to use Redis to store your log files, add the connection settings to `config/config.exs`:
+```
+config :zulex, :redis_connection_string, "redis://127.0.0.1:6379"
+```
+
 
 ## Proxy Settings
 Find sample configurations in `config/config.exs` that show how to set up proxy authentication and SOCKS5.

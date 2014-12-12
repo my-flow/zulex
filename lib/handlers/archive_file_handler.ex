@@ -1,4 +1,4 @@
-defmodule ArchiveHandler do
+defmodule ArchiveFileHandler do
     use GenEvent
 
     import Logger
@@ -23,9 +23,9 @@ defmodule ArchiveHandler do
 
     @spec create_latest_log_file!(binary) :: binary
     defp create_latest_log_file!(username) do
-        filename = ArchiveHelper.get_log_file_name(username)
-        dirname  = ArchiveHelper.get_expanded_log_path(username)
-        linkname = ArchiveHelper.get_link_to_latest_log_file(username)
+        filename = ArchiveFileHelper.get_log_file_name(username)
+        dirname  = ArchiveFileHelper.get_expanded_log_path(username)
+        linkname = ArchiveFileHelper.get_link_to_latest_log_file(username)
 
         File.mkdir_p!(dirname)
         File.touch!(filename)

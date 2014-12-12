@@ -8,7 +8,17 @@ defmodule Reader.MessageClient do
         info "Starting #{inspect __MODULE__}"
         {:ok, _} = GenEvent.start_link(name: :EventManager)
         :ok = GenEvent.add_handler(:EventManager, DisplayHandler, [])
-        case GenEvent.add_handler(:EventManager, ArchiveHandler, [StateManager.get_credentials.email]) do
+
+        redis_connection_string = Application.get_env(:zulex, :redis_connection_string)
+        handlerResult = case redis_connection_string do
+            nil ->
+                GenEvent.add_handler(:EventManager, ArchiveFileHandler,
+                    [StateManager.get_credentials.email])
+            _ ->
+                GenEvent.add_handler(:EventManager, ArchiveRedisHandler,
+                    [redis_connection_string, StateManager.get_credentials.email])
+        end
+        case handlerResult do
             {:error, reason} -> warn("#{__MODULE__}: #{inspect reason}")
             :ok -> :ok
         end

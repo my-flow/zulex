@@ -1,4 +1,4 @@
-defmodule ArchiveHelper do
+defmodule ArchiveFileHelper do
     use Timex
 
     @date_format "%Y-%m-%d.log"
