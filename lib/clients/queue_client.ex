@@ -20,7 +20,7 @@ defmodule Reader.QueueClient do
         %HTTPotion.AsyncResponse{id: async_id} = QueueProcessor.post(
             "",
             URI.encode_query(%{
-                "event_types" => JSEX.encode!(["message"])
+                "event_types" => JSX.encode!(["message"])
             }),
             [
                 {"Content-Type", "application/x-www-form-urlencoded"}

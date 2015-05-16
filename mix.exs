@@ -11,7 +11,8 @@ defmodule Zulex.Mixfile do
       package: package,
       dialyzer: [
         plt_add_apps: [:ibrowse, :httpotion, :jsex, :jsx]
-      ]
+      ],
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -28,11 +29,12 @@ defmodule Zulex.Mixfile do
     [
       {:exactor, "~> 2.0.0"},
       {:ibrowse,   github: "cmullaparthi/ibrowse",   tag: "v4.1.1"},
-      {:httpotion, github: "my-flow/httpotion",      branch: "master"},
+      {:httpotion, github: "kemonomachi/httpotion",  branch: "master"},
       {:jsex,      github: "talentdeficit/jsex",     tag: "v2.0.0"},
-      {:jsx,       github: "talentdeficit/jsx",      tag: "v2.1.1", override: true},
+      {:jsx,       github: "talentdeficit/jsx",      tag: "v2.4.0", override: true},
       {:timex, "~> 0.13.0"},
-      {:exredis,   github: "artemeff/exredis", tag: "0.1.0"}
+      {:exredis,   github: "artemeff/exredis", tag: "0.1.0"},
+      {:excoveralls, "~> 0.3", only: [:dev, :test]}
     ]
   end
 

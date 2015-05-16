@@ -4,6 +4,7 @@ ZulEx
 A reactive [Zulip](https://zulip.com) reader in Elixir/Erlang with real-time updates.
 
 [![Build Status](https://travis-ci.org/my-flow/zulex.svg?branch=master)](https://travis-ci.org/my-flow/zulex)
+[![Coverage Status](https://coveralls.io/repos/my-flow/zulex/badge.svg?branch=master)](https://coveralls.io/r/my-flow/zulex?branch=master)
 
 
 ## Using the Client

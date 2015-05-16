@@ -3,7 +3,7 @@ defmodule Processor.Base do
     defmacro __using__(_) do
         quote do
             use HTTPotion.Base
-            import JSEX
+            import JSX
 
             def base_url do
                 "https://api.zulip.com/v1/"
@@ -18,8 +18,8 @@ defmodule Processor.Base do
             end
 
             def process_response_body(body) when is_binary(body) do
-                if JSEX.is_json? body do
-                    JSEX.decode! body, [labels: :atom]
+                if JSX.is_json? body do
+                    JSX.decode! body, [labels: :atom]
                 else
                     body
                 end

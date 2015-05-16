@@ -11,7 +11,7 @@ defmodule ArchiveFileHandler do
 
 
     def handle_event(new_messages, fun) when is_list(new_messages) do
-        Enum.each(new_messages, &(fun.(:ok, {:cont, JSEX.encode!(&1) <> "\n"})))
+        Enum.each(new_messages, &(fun.(:ok, {:cont, JSX.encode!(&1) <> "\n"})))
         {:ok, fun}
     end
 
