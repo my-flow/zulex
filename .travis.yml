@@ -5,6 +5,4 @@ otp_release:
     - 17.4
 services:
     - redis-server
-script:
-  - mix test
 after_success: "mix do compile, coveralls.travis"
